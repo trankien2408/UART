@@ -1,0 +1,10 @@
+../rtl/baud_rate_gen.v
+../rtl/uart_Tx/tx_controller.v
+../rtl/uart_Tx/tx_datapath.v
+../rtl/uart_Tx/tx_topmodule.v
+../rtl/uart_rx/rx_controller.v
+../rtl/uart_rx/rx_datapath.v
+../rtl/uart_rx/rx_topmodule.v
+../rtl/apb_slave.v
+../rtl/register_file.v
+../rtl/dti_uart.v

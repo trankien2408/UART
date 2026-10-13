@@ -1,0 +1,17 @@
+/fpga/build/
+/fpga/db/
+/fpga/incremental_db/
+/fpga/uart_soc.qsys
+/fpga/uart_soc.sopcinfo
+/fpga/uart_soc.html
+/fpga/uart_soc.cmp
+/fpga/uart_soc_generation.rpt
+/fpga/*.qws
+/firmware/build/
+/sim/results/
+__pycache__/
+*.pyc
+*.lic
+*License.dat
+license.dat
+gdbopxdriscv.ini

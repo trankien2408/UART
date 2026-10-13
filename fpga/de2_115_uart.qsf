@@ -1,0 +1,38 @@
+set_global_assignment -name FAMILY "Cyclone IV E"
+set_global_assignment -name DEVICE EP4CE115F29C7
+set_global_assignment -name TOP_LEVEL_ENTITY de2_115_uart_top
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY build/output_files
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 4
+set_global_assignment -name VERILOG_FILE de2_115_uart_top.v
+set_global_assignment -name QIP_FILE build/uart_soc/synthesis/uart_soc.qip
+set_global_assignment -name SDC_FILE de2_115_uart.sdc
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_location_assignment PIN_Y2 -to CLOCK_50
+set_location_assignment PIN_M23 -to KEY0
+set_location_assignment PIN_AB22 -to UART_TX
+set_location_assignment PIN_AC15 -to UART_RX
+set_location_assignment PIN_AB21 -to UART_CTS_N
+set_location_assignment PIN_Y17 -to UART_RTS_N
+set_location_assignment PIN_E21 -to LEDG[0]
+set_location_assignment PIN_E22 -to LEDG[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to CLOCK_50
+# DE2-115: KEY0 uses bank 6 (JP7 default 2.5 V); LEDG[1:0] use bank 7 (2.5 V).
+# UART uses GPIO bank 4: set board JP6 to 3.3 V.
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEY0
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to UART_*
+set_instance_assignment -name IO_STANDARD "2.5 V" -to LEDG[*]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to UART_RX
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to UART_CTS_N
+set_instance_assignment -name CURRENT_STRENGTH_NEW "8MA" -to UART_TX
+set_instance_assignment -name CURRENT_STRENGTH_NEW "8MA" -to UART_RTS_N
+set_instance_assignment -name CURRENT_STRENGTH_NEW "8MA" -to LEDG[*]
+
+set_global_assignment -name LAST_QUARTUS_VERSION "25.1std.0 Lite Edition"
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
