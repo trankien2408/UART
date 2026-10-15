@@ -143,7 +143,7 @@ module tb_dti_uart;
         reg [31:0] rd;
         read_reg(STT, rd);
         check(rd[2:1] === {parity_bad, 1'b1}, "RX done/parity status");
-        check(rts_n === 1, "RTS blocks sender while byte unread");
+        check(rts_n === 0, "RTS permits more bytes while FIFO has room");
         expect_reg(RX, {24'd0, expected});
         read_reg(STT, rd);
         check(rd[2:1] === 0, "RX read clears done and parity error");
@@ -227,7 +227,7 @@ module tb_dti_uart;
                 apb(0, i*4+st, 0, 0, result, error); check(error && result===0, "unaligned read error");
             end
         end
-        apb(0, 12'h014, 0, 0, result, error); check(error, "unmapped read");
+        apb(0, 12'h018, 0, 0, result, error); check(error, "unmapped read");
         apb(1, 12'h100, 32'hffffffff, 15, result, error); check(error, "upper address no alias");
         apb(0, 12'hffc, 0, 0, result, error); check(error, "last unmapped address");
         apb(1, STT, 0, 15, result, error); check(error, "STATUS is read-only");
@@ -276,8 +276,8 @@ module tb_dti_uart;
         $display("CASE unread RX preservation and RTS, no gap between two frames");
         write_reg(CFG,3);
         send_rx(8'h11,8,1,0,0,0,BIT_NS);
-        send_rx(8'h22,8,1,0,0,0,BIT_NS); // deliberately violate RTS
-        check_received(8'h11,0);
+        send_rx(8'h22,8,1,0,0,0,BIT_NS); // FIFO retains both bytes
+        expect_reg(RX,32'h11); check_received(8'h22,0);
         fork
             begin
                 send_rx(8'h33,8,1,0,0,0,BIT_NS*0.98);
@@ -291,7 +291,7 @@ module tb_dti_uart;
         join
         expect_reg(STT,1);
 
-        $display("CASE CTS stall retains START, TX data write waits while busy");
+        $display("CASE CTS stall retains START, TX staging can change while busy");
         cts_n=1; repeat (5) @(negedge clk);
         write_reg(TX,8'h96); write_reg(CTRL,1);
         expect_reg(STT,0); expect_reg(CTRL,1);
@@ -301,14 +301,14 @@ module tb_dti_uart;
             begin #(BIT_NS/3); cts_n=0; end
             begin
                 write_reg(TX,8'h3c);
-                check(last_wait>10,"TX write extended until prior frame completes");
+                check(last_wait<10,"staging write independent of active frame");
             end
         join
         expect_reg(CTRL,0);
         fork expect_tx(8'h3c,8,1,0); write_reg(CTRL,1); join
         wait_tx_ready(); #(BIT_NS*2); check(tx===1,"no duplicate START");
 
-        $display("CASE START while busy waits, CTS change cannot truncate active TX");
+        $display("CASE START while busy queues, CTS change cannot truncate active TX");
         write_reg(TX,8'hc3);
         fork
             begin expect_tx(8'hc3,8,1,0); expect_tx(8'hc3,8,1,0); end
@@ -316,7 +316,7 @@ module tb_dti_uart;
                 write_reg(CTRL,1);
                 #(BIT_NS*3);
                 write_reg(CTRL,1);
-                check(last_wait>10,"second START waits until first frame completes");
+                check(last_wait<10,"second START queues while transmitting");
             end
         join
         wait_tx_ready();
@@ -338,6 +338,31 @@ module tb_dti_uart;
         join
         wait_tx_ready(); check_received(8'hf1,0);
         duplex(8'h1b,8'h13,5,1,0,1.0);
+
+        $display("CASE FIFO wire burst: CTS stall, full backpressure, ordered drain");
+        write_reg(CFG,3); cts_n=1; repeat(5) @(negedge clk);
+        for(integer k=0;k<17;k++) begin write_reg(TX,8'h50+k);write_reg(CTRL,1);end
+        read_reg(12'h14,result);check(result[0] && result[15:8]==16,"16 queued plus one active");
+        write_reg(TX,8'h61);
+        fork
+            begin for(integer k=0;k<18;k++) expect_tx(8'h50+k,8,1,0);end
+            begin #(BIT_NS*2);cts_n=0;end
+            begin write_reg(CTRL,1);check(last_wait>10,"full FIFO stalls START until room");end
+        join
+        wait_tx_ready();#(BIT_NS*2);check(tx===1,"burst no duplicate frame");
+        $display("CASE RX FIFO wire burst: parity per byte, full RTS, overrun and wrap");
+        write_reg(CFG,config_word(8,1,2));
+        for(integer round=0;round<2;round++) begin
+            for(integer k=0;k<17;k++) send_rx(k+round*32,8,1,2,k%2,0,BIT_NS);
+            read_reg(12'h14,result);
+            check(result[4] && result[2] && result[23:16]==16 && rts_n,"full RX and sticky overrun");
+            for(integer k=0;k<16;k++) begin
+                read_reg(STT,result);check(result[2:1]=={(k%2!=0),1'b1},"parity follows FIFO head");
+                expect_reg(RX,k+round*32);
+            end
+            expect_reg(STT,1);check(!rts_n,"RTS resumes after drain");
+            write_reg(12'h14,16);expect_reg(12'h14,10);
+        end
 
         $display("CASE reset in TX, RX and stalled APB access");
         write_reg(CFG,3); write_reg(TX,8'h00); write_reg(CTRL,1);

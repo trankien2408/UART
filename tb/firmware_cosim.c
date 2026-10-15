@@ -120,7 +120,7 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
             result=0;
             if(!direction && address==SYSID_BASE) result=0x55415254u;
             else if(!direction && address==JTAG_UART_BASE) result=0; // JTAG RX empty
-            else if(!direction && address==JTAG_UART_BASE+4u) result=0; // JTAG full
+            else if(!direction && address==JTAG_UART_BASE+4u) result=16u<<16; // JTAG output drained
             else if(direction && address==JTAG_UART_BASE) {} // drop JTAG TX
             else if(direction && address==JTAG_UART_BASE+4u && data==0) {}
             else if(direction && address==CONTROL_BASE) put(args[11],data);

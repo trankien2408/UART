@@ -5,6 +5,8 @@
 void console_init(void);
 void console_text(const char *text);
 void console_send_byte(uint8_t byte);
+// Them nguyen nhom byte, tra -1 neu khong du cho (khong gui nua dong).
+int console_write(const uint8_t *data, unsigned length);
 int console_try_receive(uint8_t *byte);
 void console_echo(uint8_t byte);
 void console_poll(void);

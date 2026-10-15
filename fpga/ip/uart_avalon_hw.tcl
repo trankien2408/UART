@@ -16,7 +16,7 @@ foreach fs {synthesis simulation} {
     if {$fs eq "synthesis"} {set kind QUARTUS_SYNTH} else {set kind SIM_VERILOG}
     add_fileset $fs $kind {} {}
     set_fileset_property $fs TOP_LEVEL uart_avalon
-    foreach name {uart_avalon.v avalon_apb_bridge.v dti_uart.v apb_slave.v register_file.v baud_rate_gen.v uart_Tx/tx_topmodule.v uart_Tx/tx_controller.v uart_Tx/tx_datapath.v uart_rx/rx_topmodule.v uart_rx/rx_controller.v uart_rx/rx_datapath.v} {
+    foreach name {uart_avalon.v avalon_apb_bridge.v dti_uart.v apb_slave.v register_file.v uart_fifo.v baud_rate_gen.v uart_Tx/tx_topmodule.v uart_Tx/tx_controller.v uart_Tx/tx_datapath.v uart_rx/rx_topmodule.v uart_rx/rx_controller.v uart_rx/rx_datapath.v} {
         add_fileset_file $name VERILOG PATH ../../rtl/$name
     }
 }

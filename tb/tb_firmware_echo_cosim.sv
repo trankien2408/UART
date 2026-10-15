@@ -55,16 +55,32 @@ module tb_firmware_echo_cosim;
         $firmware_start;
         repeat(5) @(posedge clk); #1; reset_n=1;
         wait(control[2]);
+        // 8 lines, each 31 printable bytes plus LF. LF echoes as CRLF.
         for(integer i=0;i<256;i++) begin
-            fork send_byte(i); expect_byte(i); join
+            if ((i%32)==31) begin
+                fork
+                    send_byte(8'h0a);
+                    begin expect_byte(8'h0d); expect_byte(8'h0a); end
+                join
+            end else begin
+                fork send_byte(8'h61+(i%26)); expect_byte(8'h61+(i%26)); join
+            end
         end
-        // Continuous full-duplex burst: no pause between incoming UART frames.
+        // Continuous input burst; normalized newlines add one output byte.
         fork
-            begin for(integer i=0;i<256;i++) send_byte((i*73+19)&255); end
-            begin for(integer i=0;i<256;i++) expect_byte((i*73+19)&255); end
+            begin
+                for(integer i=0;i<256;i++)
+                    send_byte((i%32)==31 ? 8'h0a : 8'h61+(i%26));
+            end
+            begin
+                for(integer i=0;i<256;i++) begin
+                    if ((i%32)==31) begin expect_byte(8'h0d); expect_byte(8'h0a); end
+                    else expect_byte(8'h61+(i%26));
+                end
+            end
         join
         repeat(12000) begin @(posedge clk); if(tx!==1) $fatal(1,"extra TX byte"); end
-        $display("PASS firmware_echo_cosim: actual C app + UART RTL, %0d echoes, burst, JTAG blocked",received);
+        $display("PASS firmware_echo_cosim: actual C app + UART RTL, %0d output bytes, line endings, burst, JTAG modeled",received);
         $finish;
     end
     initial begin #100000000; $fatal(1,"echo co-simulation watchdog"); end

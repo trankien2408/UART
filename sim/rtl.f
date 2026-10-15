@@ -6,5 +6,6 @@
 ../rtl/uart_rx/rx_datapath.v
 ../rtl/uart_rx/rx_topmodule.v
 ../rtl/apb_slave.v
+../rtl/uart_fifo.v
 ../rtl/register_file.v
 ../rtl/dti_uart.v

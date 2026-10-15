@@ -4,6 +4,8 @@
 #include <stddef.h>
 enum {
     DTI_TX=0x00, DTI_CFG=0x04, DTI_CTRL=0x08, DTI_STATUS=0x0c, DTI_RX=0x10,
+    DTI_FIFO_STATUS=0x14,
+    DTI_TX_FULL=1, DTI_TX_EMPTY=2, DTI_RX_FULL=4, DTI_RX_EMPTY=8, DTI_RX_OVERRUN=16,
     DTI_TX_DONE=1, DTI_RX_DONE=2, DTI_PARITY_ERROR=4
 };
 enum dti_parity { DTI_PARITY_NONE, DTI_PARITY_ODD, DTI_PARITY_EVEN };
@@ -16,6 +18,10 @@ uint32_t dti_status(const dti_uart *dev);
 int dti_wait_tx(const dti_uart *dev);
 // Peer must be idle when changing frame format (there is no RX-busy status bit).
 int dti_configure(const dti_uart *dev, unsigned bits, unsigned stops, enum dti_parity parity);
+// Queue without waiting for the active frame; AGAIN means TX FIFO full.
+int dti_try_queue(const dti_uart *dev, uint8_t byte);
+uint32_t dti_fifo_status(const dti_uart *dev);
+void dti_clear_overrun(const dti_uart *dev);
 int dti_try_send(const dti_uart *dev, uint8_t byte);
 int dti_send(const dti_uart *dev, uint8_t byte);
 // Parity-error return still provides and consumes the received byte.

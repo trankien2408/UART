@@ -1,6 +1,6 @@
 # UART APB: thiết kế RTL và cách kiểm thử
 
-Kết quả regression: **12/12 lượt PASS với Icarus Verilog 12.0**.
+Kết quả regression: **13/13 lượt PASS với Icarus Verilog**.
 Phạm vi và số liệu cụ thể nằm trong [VALIDATION.md](VALIDATION.md).
 
 Nguồn yêu cầu: `../../dti_uart.pdf`, Revision 0.0.1; map địa chỉ lấy từ
@@ -16,7 +16,8 @@ Thư mục đã được dọn để chỉ giữ bộ source và testbench đang
 ```
 dti_uart
   +-- apb_slave          : SETUP capture / ACCESS handshake
-  +-- register_file      : TX, CFG, CTRL, STATUS, RX
+  +-- register_file      : TX, CFG, CTRL, STATUS, RX, FIFO_STATUS
+  |   +-- uart_fifo x2   : TX 16 byte, RX 16 byte + parity
   +-- baud_rate_gen      : tick x16
   +-- tx_topmodule       : controller + datapath
   +-- rx_topmodule       : controller + datapath
@@ -45,7 +46,8 @@ này riêng lẻ. Giá trị divider phải >= 1. Với 50 MHz, cả 9 baud tron
 | 0x04 | CFG | RW | 0 | [1:0] data bits, [2] stop, [3] parity enable, [4] parity type |
 | 0x08 | CTRL | RW / tự xóa | 0 | [0] START |
 | 0x0C | STATUS | RO | 1 | [0] TX done, [1] RX done, [2] parity error |
-| 0x10 | RX data | RO | 0 | [7:0] dữ liệu nhận, đọc thành công xác nhận đã nhận |
+| 0x10 | RX data | RO | 0 | [7:0] byte đầu RX FIFO, đọc thành công pop một byte |
+| 0x14 | FIFO_STATUS | RO / W1C bit 4 | 0x0A | [0] TX full, [1] TX empty, [2] RX full, [3] RX empty, [4] RX overrun, [15:8] TX count, [23:16] RX count |
 
 CFG: data bits `00/01/10/11` tương ứng `5/6/7/8`; stop `0/1` tương ứng `1/2`;
 parity enable `0/1` tương ứng tắt/bật; parity type **1 = EVEN, 0 = ODD**.
@@ -57,7 +59,7 @@ reserved ở [31:3].
 `PSTRB` áp dụng từng byte lane. Các field đều nằm trong byte thấp nên chỉ
 `PSTRB[0]` làm thay đổi register. Ghi với strobe = 0 hoặc chỉ các byte cao là
 no-op tại register RW hợp lệ. Ghi RO vẫn là lỗi bất kể strobe. Read dùng PSTRB=0.
-Địa chỉ không thuộc 5 offset trên, kể cả địa chỉ không căn hàng 4 byte, trả lỗi;
+Địa chỉ không thuộc 6 offset trên, kể cả địa chỉ không căn hàng 4 byte, trả lỗi;
 không decode bỏ qua các bit cao nên không tạo alias.
 
 ## APB và ranh giới hai module mới
@@ -70,7 +72,7 @@ SETUP cycle (`PENABLE=0`) giữa hai transfer.
 Register file trả `read_en_o`/`write_en_o` theo ý nghĩa **sẵn sàng hoàn tất**,
 không phải xung ghi. Thêm `access_i` để side effect chỉ xảy ra khi transfer
 thực sự hoàn tất; thêm `error_o` để chuyển lỗi decode/RO về APB slave.
-Top nối `tx_busy_i` để xác nhận TX đã nhận lệnh và `rx_pending_o` để điều khiển
+Top nối `tx_busy_i` để xác nhận TX đã nhận lệnh và `rx_full_o` để điều khiển
 RTS theo trạng thái buffer. Các cổng nội bộ bổ sung này khắc phục chỗ chưa đầy đủ
 trong bảng giao diện spec; không thêm cổng ngoài APB.
 
@@ -82,33 +84,36 @@ Quy tắc giao thức được đối chiếu với
 
 ## TX, RX và các quyết định ở trường hợp biên
 
-- TX done là trạng thái sticky: reset = 1, xuống 0 khi lệnh START được nhận,
-  lên 1 khi frame truyền xong. Không nối trực tiếp xung done của core vào bit
-  trạng thái mà CPU cần polling.
-- Ghi CTRL[0]=1 tạo một yêu cầu. START giữ pending khi CTS chưa cho phép, tự
-  xóa khi TX nhận lệnh. Đọc CTRL thấy pending; ghi 0 không hủy yêu cầu đã nhận.
-  Không cần phần mềm ghi 1 rồi ghi 0. Mỗi lần ghi 1 được chấp nhận gửi một frame.
-- Ghi TX data khi TX done=0 sẽ **wait** đến lúc frame trước xong; ghi START=1
-  khi bận cũng wait. Ghi không đụng byte thấp không wait. Không có TX FIFO.
-- CTS active-low và được đồng bộ 2 FF ở top. CTS chặn bắt đầu frame mới;
-  đổi CTS giữa frame không cắt frame đang gửi. Nếu CTS giữ 1 vô hạn, lệnh đang
-  pending vẫn chờ; CPU nên polling STATUS thay vì cố ghi tiếp.
-- TX chốt format và parity lúc thực sự bắt đầu frame (sau khi CTS cho phép).
-  RX chốt format lúc phát hiện START. Ghi CFG giữa frame chỉ ảnh hưởng frame
-  tiếp theo. Nếu còn chờ CTS thì format chưa được chốt.
+- TX FIFO chứa 16 byte chờ, ngoài ra có một thanh ghi byte đang phát/chờ CTS.
+  RX FIFO chứa 16 byte; mỗi byte đi kèm một bit lỗi parity.
+- Ghi TX chỉ cập nhật staging register. Ghi CTRL[0]=1 chụp byte staging vào FIFO;
+  mỗi giao dịch START thành công tạo đúng một frame. Ghi TX không làm đổi byte
+  đang phát. START khi FIFO đầy sẽ wait đến lúc có chỗ; byte lane thấp bị mask
+  thì không enqueue và không wait.
+- STATUS.TX_DONE = 1 khi FIFO và bộ phát đều đã rỗng, kể cả stop bit hoàn tất.
+  FIFO_STATUS.TX_EMPTY chỉ nói hàng đợi rỗng: vẫn có thể có một byte đang phát.
+  TX count không gồm byte đang phát/chờ CTS. CTRL[0] phản ánh yêu cầu của bộ
+  nạp TX đang chờ core nhận, không phải số byte đang chờ.
+- CTS active-low được đồng bộ 2 FF, chặn bắt đầu frame mới, không cắt frame
+  đang chạy. Nếu CTS giữ 1, FIFO cuối cùng sẽ đầy. Phần mềm dùng TX_FULL trước
+  khi enqueue để tránh giữ bus chờ; giao diện driver dành cho một CPU/task sở hữu.
+- Ghi CFG có byte lane thấp hợp lệ phải chờ TX_DONE, để các byte đã queue không
+  bị đổi format. RX chốt format ở START; chỉ đổi CFG khi phía gửi RX đang idle.
 - RX lấy mẫu x16, kiểm tra START ở giữa bit, lấy từng bit LSB-first. Ký tự 5–7
   bit được zero-extend đúng vào các bit thấp. Chỉ START được chấp nhận ở IDLE
   mới reset bộ đếm lấy mẫu; cạnh xuống của data không được reset timing.
-- Sau byte RX hợp lệ, RX done giữ 1 và parity_error gắn với byte đó. Đọc STATUS
-  không xóa chúng. Một lần đọc RX hoàn tất sẽ xóa RX done và parity_error;
-  dữ liệu RX vẫn giữ giá trị cuối cho tới byte mới.
-- Đọc RX khi rỗng **wait cho đến khi có byte**. Muốn không blocking, CPU cần đọc
-  STATUS trước. Không có timeout phần cứng; reset có thể hủy giao dịch đang chờ.
-- RX buffer chỉ có 1 byte. RTS active-low: bằng 1 trong khi đang nhận hoặc còn
-  byte chưa đọc, về 0 khi sẵn sàng. Nếu bên gửi bỏ qua RTS, byte mới khi buffer
-  đầy bị bỏ; byte cũ không bị ghi đè. Không có overrun flag trong spec.
-- Nếu CPU đọc RX và core hoàn tất byte mới cùng cạnh clock: CPU nhận byte cũ;
-  byte mới cùng parity_error mới được giữ lại và RX done vẫn là 1.
+- RX_DONE = !RX_EMPTY, PARITY_ERROR thuộc byte đầu FIFO. Đọc STATUS không pop.
+  Đọc RX thành công pop đúng một byte; nếu còn dữ liệu, RX_DONE vẫn bằng 1 và
+  parity chuyển sang byte tiếp theo. Khi rỗng, giá trị preview giữ byte đọc cuối.
+- Đọc RX rỗng wait đến khi có byte. Driver phải kiểm tra RX_DONE trước.
+- RTS active-low lên 1 trong khi core đang nhận hoặc RX FIFO đầy; một byte chưa
+  đọc không còn chặn nhận byte kế tiếp. Flow control cần phía gửi thực sự tuân
+  thủ RTS; demo ESP32 chỉ dùng TX/RX/GND nên không tự ngăn được mọi trường hợp tràn.
+- Nếu FIFO đầy, byte mới bị bỏ và RX_OVERRUN giữ 1. Ghi 1 vào bit 4 của 0x14
+  xóa cờ; bit khác chỉ đọc, ghi bị bỏ qua. Tràn mới cùng cạnh xóa thắng lệnh xóa.
+- Pop và push cùng cạnh khi đầy: CPU nhận byte cũ, byte mới được giữ, count
+  không đổi và không báo overrun. Khi rỗng, byte vừa đến không bị pop trước
+  khi CPU thấy READY. Reset xóa cả FIFO, active TX và overrun.
 - Sai parity: vẫn nhận byte, set parity_error. Stop bit không hợp lệ: bỏ cả
   frame, không set RX done. Core có frame_error nội bộ; không mở rộng STATUS
   vì spec chỉ quy định ba bit trạng thái. Kiểm tra cả stop bit thứ hai nếu dùng.
@@ -149,8 +154,8 @@ bash UART/sim/check_synthesis.sh
 Log/report nằm trong `UART/sim/results/quartus/`. `QUARTUS_BIN` cho phép thay
 đường dẫn cài đặt. Compile và synthesis thành công không thay thế simulation.
 
-- `tb_register_file.sv`: sticky status, command pending/accept, strobe, RO,
-  không side effect khi thiếu access, buffer đầy, đọc đồng thời RX completion.
+- `tb_uart_fifo.sv`: 30.000 chu kỳ ngẫu nhiên, depth 1/3/16, wrap, reset, push/pop đồng thời.
+- `tb_register_file.sv`: TX snapshot, full/backpressure, RX ordering/parity, overrun/W1C, simultaneous replacement và reset.
 - `tb_baud_rate_check.sv`: 9 baud yêu cầu + biên divider 1/2, khoảng tick,
   số tick, độ rộng và reset.
 - `tb_dti_uart.sv`: APB BFM và serial TX/RX model độc lập với counters của DUT;
@@ -160,8 +165,7 @@ Log/report nằm trong `UART/sim/results/quartus/`. `QUARTUS_BIN` cho phép thay
   false START, đổi cấu hình khi đang chạy, reset giữa frame/transfer.
 - Smoke test top tích hợp tại 8 baud còn lại, mỗi baud 4 format.
 
-Ba testbench liệt kê ở trên là bộ regression đang dùng. Các testbench cũ,
-source trùng, bản backup cũ và cache của công cụ đã được xóa khi dọn project.
-
-Phạm vi công việc hiện tại: RTL và simulation. Chưa tạo hệ thống Nios, driver C,
-Avalon-to-APB bridge, pin assignment, timing constraint cho board hay nạp FPGA.
+Bản mở rộng FIFO giữ nguyên 5 offset cũ và 3 bit STATUS cũ; 0x14 là phần
+mở rộng của project, không phải thanh ghi đã có trong spec ban đầu.
+Sau khi đổi RTL phải generate/compile FPGA và nạp SOF mới, không chỉ nạp ELF.
+Xem [FIFO.md](FIFO.md) và README gốc để build/nạp toàn hệ thống.

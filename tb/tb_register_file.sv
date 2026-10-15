@@ -7,81 +7,80 @@ module tb_register_file;
     reg [11:0] paddr_i=0;
     reg [31:0] pwdata_i=0, rx_data_i=0;
     reg tx_busy_i=0, tx_done_i=0, rx_done_i=0, parity_error_i=0;
-    wire read_en_o,write_en_o,error_o,start_tx_o,rx_pending_o;
+    wire read_en_o,write_en_o,error_o,start_tx_o,rx_pending_o,rx_full_o;
     wire [31:0] prdata_o,tx_data_o;
     wire [1:0] data_bit_num_o;
     wire stop_bit_num_o,parity_en_o,parity_type_o;
     integer checks=0;
-    register_file dut (.*);
+    register_file #(.FIFO_DEPTH(4)) dut (.*);
     task automatic check(input bit pass,input string msg);
         checks++;
         if (!pass) $fatal(1,"register_file t=%0t: %s",$time,msg);
     endtask
-    task automatic select_read(input [11:0] addr,input [31:0] expected);
-        @(negedge clk); access_i=0; pwrite_i=0; paddr_i=addr;
-        #1; check(prdata_o===expected,$sformatf("read %h expected %h got %h",addr,expected,prdata_o));
+    task automatic wr(input [11:0] a,input [31:0] d);
+        @(negedge clk); access_i=1;pwrite_i=1;pstrb_i=15;paddr_i=a;pwdata_i=d;
+        #1;check(write_en_o && !error_o,"write ready");
+        @(negedge clk);access_i=0;
+    endtask
+    task automatic rd(input [11:0] a,input [31:0] d,input bit consume);
+        @(negedge clk);access_i=consume;pwrite_i=0;paddr_i=a;
+        #1;check(prdata_o===d && read_en_o && !error_o,$sformatf("read %h expected %h got %h",a,d,prdata_o));
+        @(negedge clk);access_i=0;
+    endtask
+    task automatic receive_byte(input [7:0] d,input bit bad);
+        @(negedge clk);rx_data_i=d;parity_error_i=bad;rx_done_i=1;
+        @(negedge clk);rx_done_i=0;
+    endtask
+    task automatic transmit_byte(input [7:0] d);
+        wait(start_tx_o); #1;check(tx_data_o===d,"queued TX order and snapshot");
+        @(negedge clk);tx_busy_i=1;
+        @(negedge clk);check(!start_tx_o,"start acknowledged");
+        repeat(3) @(negedge clk);
+        tx_done_i=1;
+        @(negedge clk);tx_done_i=0;tx_busy_i=0;
+        @(negedge clk);
     endtask
     initial begin
-        repeat (3) @(negedge clk); reset_n=1;
-        select_read(12'hc,1);
-        // The decoder seeing a valid write address is not itself a transaction.
-        @(negedge clk); pwrite_i=1;paddr_i=0;pwdata_i=8'hab;pstrb_i=15;
-        repeat (4) @(negedge clk);
-        check(tx_data_o===0,"no write without access qualifier");
-        access_i=1;
-        @(negedge clk);access_i=0;
-        check(tx_data_o===32'hab,"TX data committed once");
-        paddr_i=8;pwdata_i=1;access_i=1;
-        @(negedge clk);access_i=0;
-        check(start_tx_o===1,"START held pending");
-        select_read(12'hc,0);
-        repeat (4) @(negedge clk);
-        check(start_tx_o===1,"pending survives CTS wait");
-        pwrite_i=1;paddr_i=0;pstrb_i=15;#1;
-        check(write_en_o===0,"payload write waits while pending");
-        pstrb_i=14;#1;check(write_en_o===1,"masked payload write does not wait");
-        tx_busy_i=1;
-        @(negedge clk);tx_busy_i=0;
-        check(start_tx_o===0,"START clears when TX accepts");
-        tx_done_i=1;
-        @(negedge clk);tx_done_i=0;
-        select_read(12'hc,1);
-        // Completion is converted from a pulse into sticky RX status/data.
-        @(negedge clk);rx_done_i=1;rx_data_i=32'h123400a5;parity_error_i=1;
-        @(negedge clk);rx_done_i=0;parity_error_i=0;
-        select_read(12'hc,7);select_read(12'h10,32'ha5);
-        check(rx_pending_o===1,"read preview without access must not acknowledge RX");
-        @(negedge clk);rx_done_i=1;rx_data_i=32'h5a;
-        @(negedge clk);rx_done_i=0;
-        select_read(12'h10,32'ha5);select_read(12'hc,7);
-        // Exact same edge: CPU consumes old byte and receiver finishes a new one.
-        @(negedge clk);paddr_i=12'h10;pwrite_i=0;access_i=1;
-        rx_done_i=1;rx_data_i=32'h3c;parity_error_i=0;
-        #1;check(prdata_o===32'ha5,"CPU sees old byte on simultaneous replacement");
+        repeat(3) @(negedge clk);reset_n=1;
+        rd(12'hc,1,0);rd(12'h14,10,0);
+        // Staging only: neither an address preview nor a data write starts TX.
+        @(negedge clk);pwrite_i=1;paddr_i=0;pwdata_i=99;pstrb_i=15;
+        repeat(3) @(negedge clk);rd(0,0,0);
+        for(integer i=0;i<5;i++) begin wr(0,8'h40+i);wr(8,1);end
+        rd(12'h14,32'h409,0); // four queued + one active waiting on CTS
+        @(negedge clk);paddr_i=8;pwrite_i=1;pwdata_i=1;
+        #1;check(!write_en_o,"full TX backpressure");
+        pstrb_i=14;#1;check(write_en_o,"masked START does not block");
+        paddr_i=4;pstrb_i=15;#1;check(!write_en_o,"format held until drained");
+        for(integer i=0;i<5;i++) transmit_byte(8'h40+i);
+        rd(12'hc,1,0);
+        // Wrap both FIFO pointers repeatedly; parity belongs to the head byte.
+        for(integer round=0;round<12;round++) begin
+            for(integer i=0;i<4;i++) receive_byte(round*4+i,i%2);
+            check(rx_full_o,"RX full");
+            receive_byte(8'hee,0); // overflow drops newest and preserves old bytes
+            rd(12'h14,32'h40016,0);
+            for(integer i=0;i<4;i++) begin
+                rd(12'hc,3+4*(i%2),0);rd(12'h10,round*4+i,1);
+            end
+            wr(12'h14,16);rd(12'h14,10,0);
+        end
+        // Simultaneous full read/push retains count and accepts replacement.
+        for(integer i=0;i<4;i++) receive_byte(i,0);
+        @(negedge clk);paddr_i=12'h10;pwrite_i=0;access_i=1;rx_done_i=1;rx_data_i=4;
+        #1;check(prdata_o==0 && read_en_o,"simultaneous read sees old head");
         @(negedge clk);access_i=0;rx_done_i=0;
-        select_read(12'hc,3);select_read(12'h10,32'h3c);
-        @(negedge clk);access_i=1;
-        @(negedge clk);access_i=0;
-        select_read(12'hc,1);
-        select_read(12'h10,32'h3c);
-        check(read_en_o===0,"empty RX blocks but retains last data");
-        // Empty read waiting on the completion cycle must not consume a byte
-        // before the master has seen PREADY high on a clock edge.
-        @(negedge clk);access_i=1;rx_done_i=1;rx_data_i=32'h81;
-        #1;check(read_en_o===0,"not ready before RX completion edge");
-        @(negedge clk);rx_done_i=0;
-        #1;check(read_en_o===1 && prdata_o===32'h81,"ready with fresh byte");
-        @(negedge clk);access_i=0;
-        select_read(12'hc,1);
-        // Invalid and RO writes cannot mutate either data or status.
-        @(negedge clk);access_i=1;pwrite_i=1;paddr_i=12'hc;pwdata_i=0;pstrb_i=15;
-        #1;check(error_o===1,"RO write error");
-        @(negedge clk);access_i=0;
-        select_read(12'hc,1);
-        #3;reset_n=0;#1;
-        check(start_tx_o===0 && rx_pending_o===0 && tx_data_o===0,"asynchronous reset");
-        $display("PASS tb_register_file checks=%0d",checks);
-        $finish;
+        rd(12'h14,32'h40006,0);
+        for(integer i=1;i<=4;i++) rd(12'h10,i,1);
+        // Empty blocking read: arrival isn't consumed before ready is visible.
+        @(negedge clk);access_i=1;paddr_i=12'h10;pwrite_i=0;rx_done_i=1;rx_data_i=8'h81;
+        #1;check(!read_en_o,"empty read stalls");
+        @(negedge clk);rx_done_i=0;#1;check(read_en_o && prdata_o==8'h81,"arrival ready");
+        @(negedge clk);access_i=0;rd(12'hc,1,0);
+        wr(0,8'hab);wr(8,1);receive_byte(99,1);
+        #3;reset_n=0;#1;check(!start_tx_o && !rx_pending_o && tx_data_o==0,"reset flushes active and FIFOs");
+        @(negedge clk);reset_n=1;rd(12'h14,10,0);rd(12'hc,1,0);
+        $display("PASS tb_register_file checks=%0d",checks);$finish;
     end
-    initial begin #100000; $fatal(1,"register file watchdog"); end
+    initial begin #1000000;$fatal(1,"watchdog");end
 endmodule

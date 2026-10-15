@@ -1,35 +1,26 @@
 # Firmware UART trên DE2-115
 
-Ứng dụng mặc định: **CPU nhận byte qua UART tự thiết kế, gửi lại đúng byte đó,
-và ghi log qua JTAG**. Không cần firmware trên ESP32: chỉ dùng chip USB-UART
-có sẵn trên board ESP32.
+Ứng dụng mặc định (`echo` trong lệnh build/nạp) là **chat hai chiều theo dòng**
+giữa JTAG UART và UART vật lý qua USB-UART trên ESP32.
 
 ## 1. Hai terminal làm gì?
 
-Mở hai terminal tích hợp trong VS Code:
-
-```text
-Terminal UART ⇄ USB-UART của ESP32 ⇄ UART RX/TX trên FPGA
-                                          ⇅
-                                  thanh ghi APB ⇄ Nios V
-                                                     ↓
-Terminal JTAG ← USB-Blaster ← JTAG UART ← log của firmware
-```
-
-- **Terminal UART:** bạn gõ `A`, CPU nhận `0x41` rồi gửi `0x41` trở lại; màn hình
-  hiện `A`. Tắt local echo để không nhầm ký tự máy tính tự hiện với phản hồi FPGA.
-- **Terminal JTAG:** hiện `RX=0x41 TX=0x41` sau khi UART phát xong byte.
-- Terminal JTAG chỉ xem log, không nhận lệnh bàn phím và không chuyển chữ gõ
-  sang terminal UART. Đây là demo echo + log, giống hướng triển khai tham khảo.
-- Firmware không gửi lời chào ra UART để giữ đường dữ liệu sạch, kể cả khi thử
-  byte `0x00`, `0xFF`, CR hoặc LF. Thông báo READY chỉ đi qua JTAG.
+- **Terminal 1 — juart-terminal:** gõ dòng, nhấn Enter để gửi qua UART ra terminal 2.
+- **Terminal 2 — picocom:** gõ dòng, nhấn Enter để chuyển qua FPGA sang terminal 1.
+- Ký tự đang nhập được firmware echo về đúng terminal người gõ; terminal kia
+  chỉ nhận sau Enter. Picocom phải tắt local echo để không bị lặp ký tự.
+- CR, LF hoặc CR+LF đều được nhận là một Enter; đầu ra luôn CR+LF đúng một lần.
+- Backspace/DEL xóa byte cuối dòng đang nhập (phù hợp ASCII; chưa có editor Unicode).
+- Picocom vẫn gửi từng phím qua dây để CPU xử lý và echo tại chỗ. Điều kiện
+  Enter áp dụng cho việc chuyển nội dung sang terminal đối diện.
+- Không gửi log hex RX/TX cho từng ký tự; READY và thông báo lỗi xuất qua JTAG.
 
 ## 2. Nên đọc code theo thứ tự nào?
 
 1. **`main.c`:** `uart_demo_init()` cấu hình một lần; `uart_demo_poll()` kiểm tra
-   TX hoàn tất → nhận RX → phát byte đang chờ. `main()` gọi lặp lại hàm poll.
+   TX hoàn tất → nhận RX → nạp tối đa 16 byte đang chờ vào TX FIFO. `main()` gọi lặp lại hàm poll.
 2. **`dti_uart.h` và `dti_uart.c`:** địa chỉ thanh ghi và các thao tác gửi/nhận.
-3. **`console.c`:** xuất log JTAG mà không đứng chờ terminal.
+3. **`console.c`:** đọc phím JTAG và xuất dữ liệu qua hàng đợi không chặn.
 4. **`uart_platform.h`:** đọc/ghi MMIO và đọc bộ đếm chu kỳ CPU. Nhánh
    `UART_HOST_TEST` chỉ phục vụ kiểm thử trên PC.
 
@@ -49,32 +40,32 @@ Baud rate được chọn trong RTL; ghi CFG chỉ thay đổi định dạng fr
 | `0x04` | CFG | `0x03` chọn 8N1 |
 | `0x08` | CTRL | Ghi bit START = 1 một lần |
 | `0x0C` | STATUS | Bit 0 TX_DONE, bit 1 RX_DONE, bit 2 PARITY_ERROR |
-| `0x10` | RX | Đọc byte và xóa RX_DONE/PARITY_ERROR |
+| `0x10` | RX | Pop một byte; status chuyển sang byte tiếp theo |
+| `0x14` | FIFO_STATUS | Full/empty TX/RX, overrun và số byte trong FIFO; xem `../docs/FIFO.md` |
 
 Driver luôn kiểm tra RX_DONE trước khi đọc RX, vì đọc RX rỗng sẽ giữ giao dịch
-APB chờ. Khi gửi, driver kiểm tra TX_DONE, ghi TX rồi ghi START; phần cứng tự
-xóa START. Firmware chỉ báo TX thành công sau khi TX_DONE trở lại 1.
+APB chờ. `dti_try_queue()` kiểm tra TX_FULL rồi ghi TX/START để enqueue.
+Chat nạp tối đa 16 byte mỗi đợt và chờ TX_DONE để xác nhận cả đợt hoàn tất.
+`dti_send()`/`dti_try_send()` giữ cách gửi từng byte cũ cho scope và self-test.
 
-## 4. Bộ đệm, log và xử lý lỗi
+## 4. Bộ đệm và xử lý lỗi
 
-- Hàng đợi echo chứa tối đa 256 byte, bao gồm byte đang phát. Các byte được
-  giữ đúng thứ tự. Polling giúp CPU tiếp tục nhận trong khi TX đang phát.
-- RX lỗi parity: đọc để giải phóng thanh ghi, bỏ byte lỗi, bật LED lỗi và tiếp
-  tục phục vụ byte tiếp theo. Ca này được kiểm thử bằng mô hình; demo mặc định
-  tắt parity nên muốn thử trên dây phải cấu hình cả hai phía cùng chế độ parity.
-- Hàng đợi đầy: bỏ byte mới, giữ dữ liệu cũ, bật LED lỗi.
-- TX chưa hoàn tất sau 100 ms: bật LED lỗi và dừng xử lý echo đến khi reset.
-  Không tự phát lại vì byte cũ có thể vẫn đang nằm trong phần cứng.
-- SYSID sai hoặc khởi tạo thất bại: dừng echo và bật LED lỗi.
-- LEDG[0] báo khởi tạo thành công; LEDG[1] giữ sáng khi đã gặp lỗi, xóa khi reset.
-- Mỗi vòng poll gửi tối đa 8 ký tự log. JTAG đầy/chưa được đọc thì quay lại
-  phục vụ UART ngay. Nếu dòng log trước còn chờ, dòng log mới bị bỏ qua; log
-  không phải bản ghi đầy đủ mọi byte/lỗi. LED lỗi vẫn hoạt động độc lập.
-
-RX phần cứng chỉ giữ một byte chưa đọc. Hàng đợi phần mềm không thay thế được
-FIFO phần cứng hoặc flow control: không cam kết nhận vô hạn khi bên kia gửi
-nhanh hơn khả năng phục vụ. Demo bỏ qua CTS và chỉ cần TX/RX/GND; kiểm thử
-chấp nhận trên kit dùng gửi một byte, chờ echo rồi mới gửi byte tiếp theo.
+- Hai bộ đệm nhập độc lập, mỗi dòng tối đa 120 byte chưa tính CR/LF.
+- Hàng đợi TX UART và JTAG đều 512 byte; chuyển một dòng sang đầu ra theo
+  nguyên tắc đủ chỗ cho cả dòng hoặc bỏ cả dòng, không chuyển nửa dòng.
+- Dòng quá dài hoặc RX parity lỗi: bỏ dòng đang nhập đến Enter, bật LED lỗi;
+  dòng tiếp theo vẫn được nhận. Không gửi tiền tố của dòng lỗi sang bên kia.
+- Hàng đợi đầy: báo lỗi, giữ dữ liệu đã có; không cam kết truyền vô hạn khi
+  terminal đích không đọc. Terminal JTAG bị chặn không làm CPU ngừng phục vụ UART.
+- Mỗi poll xuất tối đa 16 byte JTAG. TX UART quá 100 ms không hoàn tất thì
+  dừng ứng dụng, không gửi lặp byte; reset để khởi động lại.
+- LEDG[0] sáng khi khởi tạo thành công; LEDG[1] giữ sáng sau lỗi đến khi reset.
+- Thiết kế dành cho nhập văn bản từng dòng. Nếu hai người cùng gõ và nhận
+  trong lúc dòng cục bộ chưa xong, không có cơ chế vẽ lại dòng như ứng dụng chat GUI.
+- FIFO phần cứng: TX 16 byte chờ + một byte active; RX 16 byte kèm parity.
+  Tràn RX bật LED lỗi, báo `RX FIFO overrun; reset required` và dừng ứng dụng.
+  Demo không dùng CTS, chỉ cần TX/RX/GND; FIFO hữu hạn không bảo đảm nhận vô hạn
+  nếu CPU không đọc kịp.
 
 ## 5. Build và kiểm thử khi chưa có kit
 
@@ -90,7 +81,7 @@ bash UART/firmware/test_driver.sh
 # Driver C + RTL: 24 định dạng × 8 mẫu = 192 frame
 bash UART/sim/run_firmware_cosim.sh
 
-# Ứng dụng echo C + RTL: dữ liệu trên dây RX/TX, có burst, JTAG bị chặn
+# Ứng dụng C + RTL: dòng văn bản, chuẩn hóa LF thành CRLF, burst, JTAG mô hình
 bash UART/sim/run_firmware_echo_cosim.sh
 
 # Build chương trình self-test độc lập; không thay thế ELF demo
@@ -128,8 +119,8 @@ trong mô phỏng, không phải thời gian chờ thực tế. Log đầy đủ
 `../sim/results/niosv_firmware/console.log`. `--compile-only` dùng thư mục log
 riêng `niosv_firmware_compile`, không ghi đè log đang chạy CPU.
 
-Tình trạng hiện tại xem [VALIDATION.md](VALIDATION.md). Chưa có kit nên chưa
-xác nhận đường USB-Blaster/USB-UART hoặc hoạt động vật lý trên board.
+Tình trạng bản FIFO xem [VALIDATION.md](VALIDATION.md). Bản FIFO mới cần nạp
+và kiểm thử lại trên kit; kết quả bản trước không thay thế bước này.
 
 ## Đo UART TX bằng oscilloscope: gửi hello liên tục
 
@@ -166,7 +157,7 @@ chạy lệnh nạp đầy đủ `program.sh 1 1 scope` ở trên và kiểm tra
 Tải ELF không tự cấu hình CPU trong FPGA. Script lưu log tại
 `../fpga/build/logs/program.*`, đường dẫn lượt mới nhất nằm trong
 `../fpga/build/logs/latest_program_directory.txt`.
-Không cần compile lại FPGA. Firmware scope không in log JTAG và không echo RX.
+Nếu FPGA đã chứa bản FIFO mới thì không cần compile lại khi chỉ sửa chuỗi C. Firmware scope không in log JTAG và không echo RX.
 Picocom sẽ nhận `hellohello...` nếu đường TX tới USB-UART đã được nối.
 
 Đầu dò oscilloscope nối GPIO[0] (UART_TX / pin FPGA AB22), dây mass nối GND
@@ -182,7 +173,7 @@ ELF scope. Bản echo vẫn được giữ riêng.
 
 ## 6. Mở hai terminal khi đã có kit và đã nạp demo
 
-Terminal 1 — log JTAG:
+Terminal 1 — nhập/nhận dòng JTAG:
 
 ```bash
 cd /home/kien/Documents/uart

@@ -6,7 +6,8 @@ USB-UART có sẵn trên board ESP32 để giao tiếp với UART của FPGA.
 
 Có hai chương trình C:
 
-- **Echo:** nhận byte từ UART rồi phát lại chính byte đó; ghi log RX/TX qua JTAG UART.
+- **Echo/chat:** nhập dòng ở một terminal, nhấn Enter mới chuyển cả dòng sang
+  terminal còn lại. Hỗ trợ cả chiều JTAG → UART và UART → JTAG.
 - **Scope:** tự phát chuỗi `hello`, chờ khoảng 100 ms sau mỗi chuỗi rồi lặp lại,
   dùng để quan sát tín hiệu bằng oscilloscope. Không thêm CR/LF hoặc byte NUL.
 
@@ -21,14 +22,14 @@ flowchart LR
     CPU[Nios V/m chạy firmware C] <-->|Avalon-MM| BR[Bridge Avalon sang APB]
     BR <-->|APB| REG[APB slave và register file]
     REG <--> UART
-    CPU --> JU[JTAG UART]
-    JU --> BL[USB-Blaster]
-    BL --> LOG[Terminal log: juart-terminal]
+    CPU <--> JU[JTAG UART]
+    JU <--> BL[USB-Blaster]
+    BL <--> LOG[Terminal JTAG: juart-terminal]
 ```
 
 ESP32 được dùng làm bộ chuyển USB-UART; CPU ESP32 được giữ reset và không
 chạy firmware chuyển tiếp. Hai terminal trong VS Code có vai trò khác nhau:
-picocom gửi/nhận dữ liệu UART, còn juart-terminal hiển thị log của CPU Nios V.
+picocom gửi/nhận qua UART vật lý, còn juart-terminal gửi/nhận qua JTAG UART.
 
 ## Cấu trúc thư mục
 
@@ -36,7 +37,7 @@ picocom gửi/nhận dữ liệu UART, còn juart-terminal hiển thị log củ
 |---|---|
 | `rtl/` | Các khối UART, APB và bridge |
 | `fpga/` | Project Quartus, top-level, pin mapping và script tạo/nạp hệ thống |
-| `firmware/main.c` | Chương trình echo và log RX/TX |
+| `firmware/main.c` | Chat hai chiều theo dòng (Enter để gửi) |
 | `firmware/dti_uart.c` | Driver truy cập thanh ghi UART |
 | `firmware/examples/scope_main.c` | Chương trình phát `hello` để đo sóng |
 | `tb/`, `sim/` | Testbench và script mô phỏng |
@@ -95,35 +96,45 @@ source fpga/scripts/env.sh
 jtagconfig
 
 # Cable 1, FPGA ở vị trí 1 trong chuỗi Quartus, firmware echo.
-bash fpga/program.sh 1 1 echo
+bash UART/fpga/program.sh 1 1 echo
 ```
 
 Script nạp `.sof`, sau đó tải `.elf` vào RAM và chạy CPU. 
 
 ## 3. Mở hai terminal trong VS Code
 
-**Terminal 1 — xem log CPU qua USB-Blaster:**
+**Terminal 1 — nhập/nhận dòng qua JTAG và USB-Blaster:**
 
 ```bash
-bash firmware/terminal_jtag.sh -c 1 -d 0
+bash UART/firmware/terminal_jtag.sh -c 1 -d 0
 ```
 
 **Terminal 2 — giao tiếp UART qua ESP32:**
-
+Lenh Permission
+```sudo chmod a+rw /dev/ttyUSB0```
 ```bash
 python3 -m serial.tools.list_ports -v
-bash firmware/terminal_uart.sh /dev/ttyUSB0
+bash UART/firmware/terminal_uart.sh /dev/ttyUSB0
 ```
 
 Thay `/dev/ttyUSB0` bằng cổng USB-UART thực tế. Script picocom đặt 115200 8N1,
-tắt flow control và local echo; Enter gửi CR+LF.
+tắt flow control và local echo; Enter gửi CR+LF. Firmware tự echo ký tự về
+terminal đang gõ, chỉ chuyển sang terminal bên kia khi Enter. Không bật thêm
+local echo trong picocom vì sẽ bị lặp ký tự.
+
+Mỗi dòng tối đa 120 byte; Backspace sửa dòng đang nhập. CR, LF và CR+LF được
+chuẩn hóa thành đúng một CR+LF để không thụt cột hoặc chèn dòng trống. Ví dụ
+gõ `abc` ở terminal 1: terminal 2 chưa hiện gì; nhấn Enter thì terminal 2
+hiện `abc` và con trỏ trở về đầu dòng kế tiếp. Chiều ngược lại tương tự.
+Dòng quá dài bị bỏ đến Enter và LED lỗi sáng. Chế độ này dành cho nhập văn bản;
+không phải đường truyền byte nhị phân trong suốt.
 
 
 ## 4. Phát hello để đo oscilloscope
 
 ```bash
-bash firmware/build.sh all scope
-bash fpga/program.sh 1 1 scope
+bash UART/firmware/build.sh all scope
+bash UART/fpga/program.sh 1 1 scope
 ```
 
 Firmware tự phát 5 byte `68 65 6C 6C 6F` rồi chờ khoảng 100 ms. Picocom nhận
@@ -136,9 +147,16 @@ frame. Dữ liệu UART truyền bit thấp trước, idle/stop ở mức cao.
 Để quay lại echo:
 
 ```bash
-bash firmware/build.sh compile echo
-bash fpga/program.sh 1 1 echo
+bash UART/firmware/build.sh compile echo
+bash UART/fpga/program.sh 1 1 echo
 ```
 
 Chi tiết thêm: [firmware](firmware/README.md), [cấu hình kit và chân FPGA](fpga/README.md),
 [kết quả kiểm thử](firmware/VALIDATION.md).
+
+## FIFO phần cứng TX/RX
+
+Mỗi chiều có FIFO 16 byte; TX còn có một byte active. Firmware chat nạp TX theo
+đợt tối đa 16 byte, RX giữ parity riêng cho từng byte và có cờ overrun.
+Giữ nguyên thao tác Enter gửi dòng, CRLF và hai terminal. Xem
+[thiết kế FIFO, register map và cách cập nhật kit](docs/FIFO.md).

@@ -23,7 +23,7 @@ module dti_uart #(
     wire [7:0] rx_data;
     wire [1:0] data_bits;
     wire stop_bits, parity_en, parity_type, start_tx;
-    wire tx_busy, tx_done, rx_done, parity_error, rx_pending, core_rts_n;
+    wire tx_busy, tx_done, rx_done, parity_error, rx_pending, rx_full, core_rts_n;
     wire frame_error; // Invalid stop-bit frames are discarded by the RX core.
 
     // CTS is asynchronous to the FPGA clock. Fail closed while reset is active.
@@ -37,7 +37,7 @@ module dti_uart #(
             cts_sync <= cts_meta;
         end
     end
-    assign rts_n = !rst_n || core_rts_n || rx_pending;
+    assign rts_n = !rst_n || core_rts_n || rx_full;
 
     apb_slave u_apb (
         .pclk(pclk), .presetn(rst_n), .psel(psel), .penable(penable),
@@ -56,7 +56,7 @@ module dti_uart #(
         .parity_type_o(parity_type), .start_tx_o(start_tx),
         .tx_busy_i(tx_busy), .tx_done_i(tx_done), .rx_done_i(rx_done),
         .parity_error_i(parity_error), .rx_data_i({24'd0, rx_data}),
-        .rx_pending_o(rx_pending)
+        .rx_pending_o(rx_pending), .rx_full_o(rx_full)
     );
     baud_rate_gen #(.CLK_FREQ(CLK_FREQ), .BAUD_RATE(BAUDRATE), .OVERSAMPLE(16))
         u_baud (.clk(clk), .rst_n(rst_n), .baud_tick(baud_tick));

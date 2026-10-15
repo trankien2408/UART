@@ -34,7 +34,7 @@ finish() {
 trap finish EXIT
 # Keep the temporary build location in the log for reproducibility/debugging.
 printf 'Simulator: %s\nBuild: %s\n' "$engine" "$build_dir" | tee "$result_dir/run_info.txt"
-test_sources=(../tb/tb_dti_uart.sv ../tb/tb_register_file.sv ../tb/tb_baud_rate_check.sv)
+test_sources=(../tb/tb_uart_fifo.sv ../tb/tb_dti_uart.sv ../tb/tb_register_file.sv ../tb/tb_baud_rate_check.sv)
 { date -Iseconds; while IFS= read -r source; do sha256sum "$source"; done < rtl.f;
   sha256sum "${test_sources[@]}" run_tests.sh; } > "$result_dir/source_manifest.txt"
 if [[ "$engine" == questa ]]; then
@@ -42,7 +42,7 @@ if [[ "$engine" == questa ]]; then
     "$questa_bin/vlog" -lint -sv -work "$build_dir/work" -f rtl.f "${test_sources[@]}" \
         2>&1 | tee "$result_dir/compile.log"
 else
-    for top in tb_dti_uart tb_register_file tb_baud_rate_check; do
+    for top in tb_uart_fifo tb_dti_uart tb_register_file tb_baud_rate_check; do
         iverilog -g2012 -Wall -s "$top" -o "$build_dir/$top.vvp" -f rtl.f "${test_sources[@]}"
     done 2>&1 | tee "$result_dir/compile.log"
 fi
@@ -76,6 +76,7 @@ run_test() {
     if ! grep -q "PASS $top" "$log"; then cat "$log"; echo "Missing PASS: $name" >&2; return 1; fi
     grep "PASS $top" "$log"
 }
+run_test uart_fifo tb_uart_fifo
 run_test register_file tb_register_file
 run_test baud_rate tb_baud_rate_check
 run_test integration_115200_seed12345 tb_dti_uart 115200 0 12345

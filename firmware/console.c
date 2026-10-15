@@ -18,11 +18,18 @@ void console_init(void)
 
 void console_send_byte(uint8_t byte)
 {
-    if (tx_count < TX_BUF_SIZE) {
-        tx_buf[tx_head] = byte;
+    (void)console_write(&byte, 1u);
+}
+
+int console_write(const uint8_t *data, unsigned length)
+{
+    if (length > TX_BUF_SIZE - tx_count) return -1;
+    for (unsigned i = 0; i < length; ++i) {
+        tx_buf[tx_head] = data[i];
         tx_head = (tx_head + 1u) % TX_BUF_SIZE;
         tx_count++;
     }
+    return 0;
 }
 
 void console_text(const char *text)

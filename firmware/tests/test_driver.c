@@ -3,6 +3,7 @@
 #include "dti_uart.h"
 #include "uart_platform.h"
 static uint32_t tick, status, cfg, txdata, rxdata, finish;
+static uint32_t fifo_status;
 static unsigned writes, starts, rx_reads;
 static int complete_tx;
 #define BASE ((uintptr_t)0x21000u)
@@ -11,6 +12,7 @@ uint32_t uart_mmio_read(uintptr_t address)
 {
     if(complete_tx && !(status&1) && (int32_t)(tick-finish)>=0) status|=1;
     switch(address-BASE) {
+    case DTI_FIFO_STATUS: return fifo_status;
     case DTI_STATUS: return status;
     case DTI_CFG: return cfg;
     case DTI_RX:
@@ -23,6 +25,7 @@ void uart_mmio_write(uintptr_t address,uint32_t value)
 {
     writes++;
     switch(address-BASE) {
+    case DTI_FIFO_STATUS: fifo_status &= ~(value & DTI_RX_OVERRUN); break;
     case DTI_CFG: assert(status&1); cfg=value; break;
     case DTI_TX: assert(status&1); txdata=value; break;
     case DTI_CTRL: assert(value==1 && (status&1)); status &= ~1u; starts++; finish=tick+40; break;
@@ -71,6 +74,12 @@ int main(void)
     assert(dti_wait_tx(&dev)==DTI_TIMEOUT && tick<200u);
     status=1; complete_tx=1; tick=0xfffffff0u;
     assert(dti_send(&dev,0xee)==DTI_OK && starts==3 && tick<100u);
+    before=writes; fifo_status=DTI_TX_FULL;
+    assert(dti_try_queue(&dev,0x31)==DTI_AGAIN && writes==before);
+    fifo_status=0; status=DTI_TX_DONE;
+    assert(dti_try_queue(&dev,0x32)==DTI_OK && txdata==0x32 && starts==4);
+    fifo_status=DTI_RX_OVERRUN|DTI_RX_FULL;
+    dti_clear_overrun(&dev); assert(dti_fifo_status(&dev)==DTI_RX_FULL);
     puts("PASS test_driver: 24 configs, invalid inputs, nonblocking RX/TX, parity, timeouts, no retransmit, cycle wrap");
     return 0;
 }

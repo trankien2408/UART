@@ -4,18 +4,25 @@
 #include "uart_platform.h"
 #include "console.h"
 
-// PIO CONTROL: bit 0 loopback, bit 1 CTS, bit 2 LED ready, bit 3 LED error.
 #define LED_READY       4u
 #define LED_ERROR       8u
 #define EXPECTED_SYSID  0x55415254u
-#define TX_TIMEOUT     ((uint32_t)ALT_CPU_FREQ / 10u) // 100 ms
-#define QUEUE_SIZE     256u
+#define TX_TIMEOUT     ((uint32_t)ALT_CPU_FREQ / 10u)
+#define QUEUE_SIZE     512u
+#define LINE_SIZE      120u // So byte toi da truoc Enter (khong tinh CR/LF).
+
+typedef struct {
+    uint8_t data[LINE_SIZE];
+    unsigned length;
+    int skip_lf, discard;
+} input_line;
 
 static dti_uart uart;
 static uint8_t queue[QUEUE_SIZE];
 static unsigned head, tail, count;
 static int transmitting, failed;
 static uint32_t tx_started, leds;
+static input_line uart_line, jtag_line;
 
 static void report_error(const char *message, int fatal)
 {
@@ -25,100 +32,126 @@ static void report_error(const char *message, int fatal)
     if (fatal) failed = 1;
 }
 
-// Khoi tao mot lan sau reset. Baud 115200 da duoc dat trong RTL.
+// Them ca nhom byte hoac khong them gi, tranh mat mot nua CR/LF hay nua dong.
+static int queue_write(const uint8_t *data, unsigned length)
+{
+    if (length > QUEUE_SIZE - count) return -1;
+    for (unsigned i = 0; i < length; ++i) {
+        queue[head] = data[i];
+        head = (head + 1u) % QUEUE_SIZE;
+        ++count;
+    }
+    return 0;
+}
+
+static void local_echo(int from_jtag, const uint8_t *data, unsigned length)
+{
+    int rc = from_jtag ? console_write(data, length) : queue_write(data, length);
+    if (rc != 0) report_error("ERROR: local echo queue full\r\n", 0);
+}
+
+static void receive_char(input_line *line, uint8_t byte, int from_jtag)
+{
+    static const uint8_t newline[] = {'\r', '\n'};
+    static const uint8_t erase[] = {'\b', ' ', '\b'};
+    // Enter co the la CR, LF hoac CR+LF; CR+LF chi ket thuc mot dong.
+    if (line->skip_lf && byte == '\n') {
+        line->skip_lf = 0;
+        return;
+    }
+    line->skip_lf = 0;
+    if (byte == '\r' || byte == '\n') {
+        line->skip_lf = byte == '\r';
+        local_echo(from_jtag, newline, sizeof(newline));
+        if (!line->discard) {
+            uint8_t complete[LINE_SIZE + 2u];
+            for (unsigned i = 0; i < line->length; ++i) complete[i] = line->data[i];
+            complete[line->length] = '\r';
+            complete[line->length + 1u] = '\n';
+            int rc = from_jtag ? queue_write(complete, line->length + 2u)
+                               : console_write(complete, line->length + 2u);
+            if (rc != 0) report_error("ERROR: destination queue full; line discarded\r\n", 0);
+        }
+        line->length = 0;
+        line->discard = 0;
+    } else if (byte == '\b' || byte == 0x7fu) {
+        if (!line->discard && line->length) {
+            --line->length;
+            local_echo(from_jtag, erase, sizeof(erase));
+        }
+    } else {
+        // Echo chi tai terminal dang go. Chi chuyen sang ben kia khi Enter.
+        local_echo(from_jtag, &byte, 1u);
+        if (line->discard) return;
+        if (line->length == LINE_SIZE) {
+            line->discard = 1;
+            report_error("ERROR: line exceeds 120 bytes; discarded until Enter\r\n", 0);
+        } else {
+            line->data[line->length++] = byte;
+        }
+    }
+}
+
 int uart_demo_init(void)
 {
     head = tail = count = 0;
     transmitting = failed = 0;
     leds = 0;
-    uart_mmio_write(CONTROL_BASE, 0); // UART noi ngoai, khong dung CTS.
+    uart_line = (input_line){0};
+    jtag_line = (input_line){0};
+    uart_mmio_write(CONTROL_BASE, 0);
     console_init();
-
     if (uart_mmio_read(SYSID_BASE) != EXPECTED_SYSID ||
         dti_init(&uart, UART_BASE, TX_TIMEOUT) != DTI_OK ||
         dti_configure(&uart, 8, 1, DTI_PARITY_NONE) != DTI_OK) {
         report_error("ERROR: init/system ID; reset required\r\n", 1);
         return -1;
     }
-
     leds = LED_READY;
     uart_mmio_write(CONTROL_BASE, leds);
-    console_text("READY: UART echo 115200 8N1\r\n");
+    console_text("READY: UART chat 115200 8N1; Enter to send\r\n");
     return 0;
 }
 
-// Moi lan goi chi xu ly viec dang san sang; khong cho terminal hay UART.
 void uart_demo_poll(void)
 {
     console_poll();
     if (failed) return;
-
-    // 1. Chi bao TX thanh cong sau khi phan cung da phat xong byte.
     if (transmitting) {
         if (dti_status(&uart) & DTI_TX_DONE) {
-            tail = (tail + 1u) % QUEUE_SIZE;
-            count--;
             transmitting = 0;
         } else if ((uint32_t)(uart_cycles() - tx_started) >= TX_TIMEOUT) {
             report_error("ERROR: TX timeout; reset required\r\n", 1);
             return;
         }
     }
-
-    // 2. Doc byte tu UART phan cung (PC truyen xuong DE2).
+    if (dti_fifo_status(&uart) & DTI_RX_OVERRUN) {
+        // Mat byte co the lam mat ca dau Enter: dung lai, khong gui dong sai.
+        report_error("ERROR: RX FIFO overrun; reset required\r\n", 1);
+        return;
+    }
     uint8_t byte;
     int result = dti_try_receive(&uart, &byte);
     if (result == DTI_PARITY) {
-        report_error("ERROR: RX parity; byte discarded\r\n", 0);
+        uart_line.discard = 1;
+        report_error("ERROR: RX parity; line discarded until Enter\r\n", 0);
     } else if (result == DTI_OK) {
-        if (count < QUEUE_SIZE) {
-            queue[head] = byte;
-            head = (head + 1u) % QUEUE_SIZE;
-            count++;
-        } else {
-            report_error("ERROR: echo queue full; byte discarded\r\n", 0);
-        }
-        // Chuyen byte nhan duoc tu PC sang Terminal 1 (JTAG) de DE2 hien thi
-        console_send_byte(byte);
-        if (byte == '\r') {
-            console_send_byte('\n');
-        }
+        receive_char(&uart_line, byte, 0);
     }
-
-    // 3. Doc byte tu Terminal 1 JTAG (DE2 truyen sang PC).
-    uint8_t jbyte;
-    if (console_try_receive(&jbyte) == 0) {
-        // Echo ve Terminal 1 de nguoi dung thay ky tu minh go, khong bi lag
-        if (jbyte == '\r') {
-            console_send_byte('\r');
-            console_send_byte('\n');
-            if (count + 2u <= QUEUE_SIZE) {
-                queue[head] = '\r'; head = (head + 1u) % QUEUE_SIZE; count++;
-                queue[head] = '\n'; head = (head + 1u) % QUEUE_SIZE; count++;
-            }
-        } else if (jbyte == 0x08 || jbyte == 0x7F) { // Backspace
-            console_send_byte('\b');
-            console_send_byte(' ');
-            console_send_byte('\b');
-            if (count + 3u <= QUEUE_SIZE) {
-                queue[head] = '\b'; head = (head + 1u) % QUEUE_SIZE; count++;
-                queue[head] = ' ';  head = (head + 1u) % QUEUE_SIZE; count++;
-                queue[head] = '\b'; head = (head + 1u) % QUEUE_SIZE; count++;
-            }
-        } else {
-            console_send_byte(jbyte);
-            if (count < QUEUE_SIZE) {
-                queue[head] = jbyte;
-                head = (head + 1u) % QUEUE_SIZE;
-                count++;
-            }
+    if (console_try_receive(&byte) == 0) receive_char(&jtag_line, byte, 1);
+    // Moi lo toi da 16 byte. Doi ca lo phat xong roi nap lo tiep theo;
+    // timeout bao trum ca lo va khong bi gia han lien tuc boi du lieu moi.
+    if (!transmitting && count) {
+        unsigned queued = 0;
+        while (queued < 16u && count && dti_try_queue(&uart, queue[tail]) == DTI_OK) {
+            tail = (tail + 1u) % QUEUE_SIZE;
+            --count;
+            ++queued;
         }
-    }
-
-    // 4. Gui byte trong queue ra UART phan cung neu dang ranh.
-    if (!transmitting && count && dti_try_send(&uart, queue[tail]) == DTI_OK) {
-        tx_started = uart_cycles();
-        transmitting = 1;
+        if (queued) {
+            tx_started = uart_cycles();
+            transmitting = 1;
+        }
     }
 }
 

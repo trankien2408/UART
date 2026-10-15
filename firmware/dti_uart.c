@@ -34,6 +34,21 @@ int dti_configure(const dti_uart *dev, unsigned bits, unsigned stops, enum dti_p
     uart_mmio_write(dev->base + DTI_CFG, cfg);
     return DTI_OK;
 }
+uint32_t dti_fifo_status(const dti_uart *dev)
+{
+    return uart_mmio_read(dev->base + DTI_FIFO_STATUS);
+}
+void dti_clear_overrun(const dti_uart *dev)
+{
+    uart_mmio_write(dev->base + DTI_FIFO_STATUS, DTI_RX_OVERRUN);
+}
+int dti_try_queue(const dti_uart *dev, uint8_t byte)
+{
+    if (dti_fifo_status(dev) & DTI_TX_FULL) return DTI_AGAIN;
+    uart_mmio_write(dev->base + DTI_TX, byte);
+    uart_mmio_write(dev->base + DTI_CTRL, 1u);
+    return DTI_OK;
+}
 int dti_try_send(const dti_uart *dev, uint8_t byte)
 {
     // Khong cho TX: chua san sang thi tra DTI_AGAIN de main phuc vu RX.
@@ -58,7 +73,7 @@ int dti_try_receive(const dti_uart *dev, uint8_t *byte)
     // Bat buoc kiem tra RX_DONE: doc RX rong se giu bus APB cho vo han.
     if (!(status & DTI_RX_DONE)) return DTI_AGAIN;
     *byte=(uint8_t)uart_mmio_read(dev->base + DTI_RX);
-    // Dung status da luu: doc RX vua xoa ca RX_DONE va PARITY_ERROR.
+    // Dung parity cua byte vua doc; sau khi pop, status thuoc byte ke tiep.
     return (status & DTI_PARITY_ERROR) ? DTI_PARITY : DTI_OK;
 }
 int dti_receive(const dti_uart *dev, uint8_t *byte)

@@ -1,3 +1,60 @@
+# Kết quả bản FIFO — 15/10/2026
+
+- Icarus regression: **13/13 PASS**. FIFO: 30.000 chu kỳ ngẫu nhiên tại depth
+  1/3/16; register file: 186 checks; hai lượt tích hợp 115200 với seed khác nhau,
+  mỗi lượt 282 frame TX và 308 frame RX; smoke 8 baud còn lại.
+- Avalon bridge: PASS 500 lệnh ngẫu nhiên, 17.647 checks; UART Avalon: PASS
+  97 frame loopback, 161.810 checks.
+- Native C tests: PASS driver và chat, gồm Enter/CRLF/backspace, queue đầy,
+  timeout/wrap, parity và dừng khi RX FIFO overrun.
+- C driver + RTL: PASS 192 frame/24 format, 161.399 giao dịch.
+- C chat + RTL: PASS 528 byte đầu ra, burst, chuẩn hóa xuống dòng và JTAG mô hình.
+- RISC-V ELF build: PASS echo, selftest và scope; echo text/data/bss =
+  16204/1844/2300 byte. Đây là cross-compile, không phải bằng chứng CPU chạy trên kit.
+- Platform Designer generation: PASS. Quartus full compile và timing PASS;
+  bản FIFO cuối đạt worst constrained slack +0,105 ns. Đã sửa cảnh báo
+  thu hẹp độ rộng pointer trong FIFO và compile lại.
+- **Chưa được đánh dấu hardware-ready:** môi trường công cụ không lấy được
+  NIC ID để xác thực license IP Nios V. Cần chạy `bash UART/fpga/build.sh compile`
+  trong terminal thường và bảo đảm không còn REVIEW REQUIRED trước khi nạp.
+- Thử full CPU simulation: **BLOCKED** ở kiểm tra socket TCP (`Operation not
+  permitted`), chưa chạy ELF trên mô hình Nios V cho bản FIFO. Có thể chạy
+  `bash UART/sim/run_niosv_firmware.sh` ngoài môi trường bị giới hạn.
+- Script serial acceptance đã đổi sang burst ASCII tối đa 120 byte/dòng,
+  kiểm tra CR/LF/CRLF; kiểm tra cú pháp và mock serial PASS, chưa chạy cổng thật.
+- Chưa nạp hoặc đo bản FIFO mới trên kit trong lần này. Kết quả phần cứng cũ
+  do người dùng báo không thay thế xác nhận bản RTL/ELF mới.
+
+Thiết kế, register map và lệnh cập nhật: [FIFO.md](../docs/FIFO.md).
+Các phần dưới đây là lịch sử của các bản trước FIFO.
+
+---
+
+# Kiểm tra bản chat theo dòng — 14/10/2026
+
+Bản mới thay echo byte/log hex bằng chat hai chiều JTAG ↔ UART. Gõ được echo
+về terminal cục bộ; chỉ chuyển dòng sang phía bên kia sau Enter. CR/LF/CRLF
+được chuẩn hóa thành một CRLF; có Backspace/DEL, giới hạn 120 byte/dòng.
+
+- Host GCC + UBSan: PASS driver và ứng dụng thực tế. Bao gồm chặn chuyển khi
+  chưa Enter, cả hai chiều, ba kiểu Enter, dòng trống, backspace, nhập xen kẽ,
+  giới hạn dòng/recovery, parity, hàng đợi đầy, JTAG bị chặn, timeout qua wrap,
+  lỗi SYSID và reset. Console nhận nguyên dòng hoặc từ chối nếu thiếu chỗ.
+- C + RTL Icarus/VPI: PASS 512 byte đầu vào thuộc 16 dòng, 528 byte đầu ra sau
+  chuẩn hóa LF thành CRLF, gồm stop/wait và burst. UART RTL là thật, CPU C và
+  JTAG là mô hình host. Mô hình JTAG được tiêu thụ dữ liệu ở bài này; ca JTAG
+  bị chặn được kiểm tra riêng trong test host.
+- RISC-V GCC build: PASS, text=15856, data=1848, bss=2300 byte.
+- Chưa chạy lại mô phỏng toàn CPU Questa hoặc xác nhận hiển thị trên kit với
+  bản chat mới. Kết quả CPU/kit trước đây bên dưới thuộc firmware cũ.
+- Giữ nguyên RTL người dùng đang có, bao gồm thay đổi register_file.v đã có
+  trước lượt sửa này; không tự push GitHub trong lượt sửa firmware.
+
+Nạp bản mới: `bash UART/fpga/program.sh 1 1 echo` từ thư mục cha UART.
+Mở lại juart-terminal và picocom theo README, không bật thêm local echo.
+
+---
+
 # Kết quả kiểm tra firmware — 12/10/2026
 
 Phạm vi: demo UART echo + JTAG log, chương trình self-test độc lập, build C
