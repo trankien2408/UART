@@ -12,6 +12,7 @@ module tb_firmware_cosim;
     wire cts_n=0;
     wire tx, rts_n;
     wire rx=tx;
+    wire irq;
     uart_avalon dut(.*);
     reg accepted=0, rvalid=0, wvalid=0;
     reg [31:0] rdata=0, cycles=0;
@@ -29,5 +30,5 @@ module tb_firmware_cosim;
         $firmware_start;
         repeat(5) @(posedge clk); #1; reset_n=1;
     end
-    initial begin #50000000; $fatal(1,"firmware co-simulation watchdog"); end
+    initial begin #400000000; $fatal(1,"firmware co-simulation watchdog"); end
 endmodule

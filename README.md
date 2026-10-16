@@ -1,5 +1,12 @@
 # UART trên FPGA DE2-115 với CPU Nios V
 
+Bản hiện tại đã có **baud lập trình được và interrupt UART**. Chat nhận RX bằng
+ISR, TX hoàn tất bằng IRQ; đổi baud qua lệnh JTAG `:baud 9600`.
+Hướng dẫn đầy đủ, register map và giới hạn kiểm chứng:
+[BAUD_INTERRUPT.md](docs/BAUD_INTERRUPT.md). Sau khi đổi baud FPGA, phải đổi
+baud của picocom; script hỗ trợ `terminal_uart.sh /dev/ttyUSB0 9600`.
+
+
 Project triển khai UART bằng Verilog trên kit **DE2-115 (Cyclone IV E)**,
 điều khiển bằng firmware C chạy trên **Nios V/m**. Máy tính sử dụng chip
 USB-UART có sẵn trên board ESP32 để giao tiếp với UART của FPGA.

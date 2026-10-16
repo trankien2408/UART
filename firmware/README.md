@@ -1,5 +1,9 @@
 # Firmware UART trên DE2-115
 
+Bản 16/10/2026: chat đã dùng **ISR UART + baud lập trình được**. Xem
+[BAUD_INTERRUPT.md](../docs/BAUD_INTERRUPT.md) để đổi baud qua `:baud 9600`,
+hiểu các thanh ghi 0x18–0x28 và cập nhật SOF/BSP/ELF tương ứng.
+
 Ứng dụng mặc định (`echo` trong lệnh build/nạp) là **chat hai chiều theo dòng**
 giữa JTAG UART và UART vật lý qua USB-UART trên ESP32.
 
@@ -18,10 +22,11 @@ giữa JTAG UART và UART vật lý qua USB-UART trên ESP32.
 ## 2. Nên đọc code theo thứ tự nào?
 
 1. **`main.c`:** `uart_demo_init()` cấu hình một lần; `uart_demo_poll()` kiểm tra
-   TX hoàn tất → nhận RX → nạp tối đa 16 byte đang chờ vào TX FIFO. `main()` gọi lặp lại hàm poll.
-2. **`dti_uart.h` và `dti_uart.c`:** địa chỉ thanh ghi và các thao tác gửi/nhận.
-3. **`console.c`:** đọc phím JTAG và xuất dữ liệu qua hàng đợi không chặn.
-4. **`uart_platform.h`:** đọc/ghi MMIO và đọc bộ đếm chu kỳ CPU. Nhánh
+   thông báo TX hoàn tất → lấy RX từ ring ISR → nạp tối đa 16 byte vào TX FIFO. `main()` gọi lặp lại hàm poll.
+2. **`uart_irq.c/.h`:** ISR UART, ring RX 511 byte dùng được và thông báo TX hoàn tất.
+3. **`dti_uart.h` và `dti_uart.c`:** địa chỉ thanh ghi và các thao tác gửi/nhận.
+4. **`console.c`:** đọc phím JTAG và xuất dữ liệu qua hàng đợi không chặn.
+5. **`uart_platform.h`:** đọc/ghi MMIO và đọc bộ đếm chu kỳ CPU. Nhánh
    `UART_HOST_TEST` chỉ phục vụ kiểm thử trên PC.
 
 `tests/` chứa kiểm thử riêng. `build/bsp/` là mã nền do công cụ Nios V sinh;
@@ -31,7 +36,7 @@ trong demo: BSP giữ STDIN/STDOUT/STDERR là `none`, console truy cập JTAG tr
 ## 3. Cấu hình và thanh ghi
 
 Demo dùng **115200 baud, 8 data bits, no parity, 1 stop bit (8N1)**.
-Baud rate được chọn trong RTL; ghi CFG chỉ thay đổi định dạng frame.
+Baud mặc định sau reset là 115200; có thể đổi qua SHADOW/APPLY. CFG chỉ đổi định dạng frame.
 Địa chỉ nền lấy từ `UART_BASE` trong `build/bsp/system.h`, hiện là `0x21000`.
 
 | Offset theo byte | Thanh ghi | Cách dùng |
@@ -41,7 +46,10 @@ Baud rate được chọn trong RTL; ghi CFG chỉ thay đổi định dạng fr
 | `0x08` | CTRL | Ghi bit START = 1 một lần |
 | `0x0C` | STATUS | Bit 0 TX_DONE, bit 1 RX_DONE, bit 2 PARITY_ERROR |
 | `0x10` | RX | Pop một byte; status chuyển sang byte tiếp theo |
-| `0x14` | FIFO_STATUS | Full/empty TX/RX, overrun và số byte trong FIFO; xem `../docs/FIFO.md` |
+| `0x14` | FIFO_STATUS | Full/empty TX/RX, overrun và số byte trong FIFO |
+| `0x18 / 0x1C` | BAUD_SHADOW / ACTIVE | Divider dự kiến / đang chạy |
+| `0x20` | BAUD_CONTROL_STATUS | APPLY, BUSY, REJECTED, DIRTY |
+| `0x24 / 0x28` | INT_ENABLE / STATUS | Enable và nguồn ngắt RX/TX/overrun |
 
 Driver luôn kiểm tra RX_DONE trước khi đọc RX, vì đọc RX rỗng sẽ giữ giao dịch
 APB chờ. `dti_try_queue()` kiểm tra TX_FULL rồi ghi TX/START để enqueue.
@@ -57,8 +65,8 @@ Chat nạp tối đa 16 byte mỗi đợt và chờ TX_DONE để xác nhận c�
   dòng tiếp theo vẫn được nhận. Không gửi tiền tố của dòng lỗi sang bên kia.
 - Hàng đợi đầy: báo lỗi, giữ dữ liệu đã có; không cam kết truyền vô hạn khi
   terminal đích không đọc. Terminal JTAG bị chặn không làm CPU ngừng phục vụ UART.
-- Mỗi poll xuất tối đa 16 byte JTAG. TX UART quá 100 ms không hoàn tất thì
-  dừng ứng dụng, không gửi lặp byte; reset để khởi động lại.
+- Mỗi poll xuất tối đa 16 byte JTAG. TX có timeout tối thiểu 100 ms, tăng theo
+  thời gian phát 16 byte khi baud thấp; lỗi timeout dừng chat, yêu cầu reset.
 - LEDG[0] sáng khi khởi tạo thành công; LEDG[1] giữ sáng sau lỗi đến khi reset.
 - Thiết kế dành cho nhập văn bản từng dòng. Nếu hai người cùng gõ và nhận
   trong lúc dòng cục bộ chưa xong, không có cơ chế vẽ lại dòng như ứng dụng chat GUI.
@@ -78,7 +86,7 @@ bash UART/firmware/build.sh all echo
 # Kiểm thử C trên máy tính
 bash UART/firmware/test_driver.sh
 
-# Driver C + RTL: 24 định dạng × 8 mẫu = 192 frame
+# Driver C + RTL: 768 frame, gồm đổi baud 9600/57600/115200
 bash UART/sim/run_firmware_cosim.sh
 
 # Ứng dụng C + RTL: dòng văn bản, chuẩn hóa LF thành CRLF, burst, JTAG mô hình
@@ -99,7 +107,8 @@ Sản phẩm:
 - Self-test bật loopback nội bộ, thử 192 frame rồi dừng ở kết quả PASS/FAIL;
   không chuyển sang echo và không phát mẫu thử ra chân TX ngoài.
 
-Hai bài C + RTL chạy mã C native trên PC, mô phỏng UART bằng Icarus; chúng
+Hai bài C + RTL chạy mã C native trên PC, mô phỏng UART bằng Icarus;
+bài chat dùng IRQ RTL và mô hình host phân phối ISR C; chúng
 **không thực thi ELF trên CPU Nios V**. Muốn mô phỏng CPU thật dùng:
 
 ```bash

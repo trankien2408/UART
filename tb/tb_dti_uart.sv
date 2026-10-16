@@ -227,7 +227,7 @@ module tb_dti_uart;
                 apb(0, i*4+st, 0, 0, result, error); check(error && result===0, "unaligned read error");
             end
         end
-        apb(0, 12'h018, 0, 0, result, error); check(error, "unmapped read");
+        apb(0, 12'h02c, 0, 0, result, error); check(error, "unmapped read");
         apb(1, 12'h100, 32'hffffffff, 15, result, error); check(error, "upper address no alias");
         apb(0, 12'hffc, 0, 0, result, error); check(error, "last unmapped address");
         apb(1, STT, 0, 15, result, error); check(error, "STATUS is read-only");

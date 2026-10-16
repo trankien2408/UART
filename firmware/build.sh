@@ -8,7 +8,7 @@ target="${2:-echo}"
 case "$phase" in prepare|compile|all) ;; *) echo 'Usage: build.sh [prepare|compile|all] [echo|selftest|scope]' >&2; exit 2;; esac
 case "$target" in
     echo) app_dir=build/app; elf_name=uart_firmware.elf
-          sources="$firmware_dir/main.c,$firmware_dir/dti_uart.c,$firmware_dir/console.c";;
+          sources="$firmware_dir/main.c,$firmware_dir/uart_irq.c,$firmware_dir/dti_uart.c,$firmware_dir/console.c";;
     selftest) app_dir=build/selftest; elf_name=uart_selftest.elf
           sources="$firmware_dir/tests/selftest_main.c,$firmware_dir/tests/uart_selftest.c,$firmware_dir/dti_uart.c,$firmware_dir/console.c";;
     scope) app_dir=build/scope; elf_name=uart_scope.elf

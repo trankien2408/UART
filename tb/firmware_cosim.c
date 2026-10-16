@@ -20,6 +20,20 @@ static int pending, complete, finished, direction, result_code;
 static uintptr_t address;
 static uint32_t data, result;
 static unsigned frames, transactions;
+#ifdef UART_ECHO_COSIM
+static atomic_uint irq_line;
+static void (*isr)(void *);
+static void *isr_context;
+static unsigned irq_locked, in_isr;
+static void service_irq(void) {
+    if (isr && !irq_locked && !in_isr && atomic_load(&irq_line)) {
+        in_isr=1;isr(isr_context);in_isr=0;
+    }
+}
+uint32_t uart_irq_lock(void) { unsigned old=irq_locked;irq_locked=1;return old; }
+void uart_irq_unlock(uint32_t state) { irq_locked=state;service_irq(); }
+int uart_irq_register(void (*fn)(void *),void *context) { isr=fn;isr_context=context;return 0; }
+#endif
 static uint32_t exchange(int write,uintptr_t addr,uint32_t value)
 {
     pthread_mutex_lock(&lock);
@@ -31,8 +45,18 @@ static uint32_t exchange(int write,uintptr_t addr,uint32_t value)
     return answer;
 }
 uint32_t uart_cycles(void) { return atomic_load(&clock_cycles); }
-uint32_t uart_mmio_read(uintptr_t addr) { return exchange(0,addr,0); }
-void uart_mmio_write(uintptr_t addr,uint32_t value) { (void)exchange(1,addr,value); }
+uint32_t uart_mmio_read(uintptr_t addr) {
+#ifdef UART_ECHO_COSIM
+    service_irq();
+#endif
+    return exchange(0,addr,0);
+}
+void uart_mmio_write(uintptr_t addr,uint32_t value) {
+#ifdef UART_ECHO_COSIM
+    service_irq();
+#endif
+    (void)exchange(1,addr,value);
+}
 static void *firmware(void *unused)
 {
     (void)unused;
@@ -43,6 +67,16 @@ static void *firmware(void *unused)
     dti_uart dev;
     result_code=dti_init(&dev,0x21000,5000000);
     if(result_code==0) result_code=uart_loopback_selftest(&dev,&frames);
+    // Exercise the actual C baud API against RTL, then use all 24 frame formats.
+    static const uint32_t rates[]={9600,57600,115200};
+    for (unsigned i=0;result_code==0 && i<3;i++) {
+        uint32_t actual;
+        result_code=dti_set_baud(&dev,50000000,rates[i],&actual);
+        unsigned checked=0;
+        if (result_code==0) result_code=uart_loopback_selftest(&dev,&checked);
+        frames+=checked;
+    }
+
 #endif
     pthread_mutex_lock(&lock);
     finished=1;
@@ -76,18 +110,23 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
     (void)unused;
     // args: address, read, write, writedata, byteenable,
     // accepted, readvalid, writevalid, readdata, response, cycles.
-    static vpiHandle args[12];
+    static vpiHandle args[14];
     static int initialized, state;
     if(!initialized) {
         vpiHandle iter=vpi_iterate(vpiArgument,vpi_handle(vpiSysTfCall,NULL));
         for(int i=0;i<11;i++) args[i]=vpi_scan(iter);
 #ifdef UART_ECHO_COSIM
         args[11]=vpi_scan(iter); // PIO control: demo ready/error LEDs.
+        args[12]=vpi_scan(iter); // Real RTL UART IRQ level.
+        args[13]=vpi_scan(iter); // Optional JTAG baud command phase.
 #endif
         vpi_free_object(iter);
         initialized=1;
     }
     atomic_store(&clock_cycles,get(args[10]));
+#ifdef UART_ECHO_COSIM
+    atomic_store(&irq_line,get(args[12]));
+#endif
     pthread_mutex_lock(&lock);
     if(state==1 && get(args[5])) {
         put(args[1],0); put(args[2],0); state=2;
@@ -108,7 +147,7 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
             pthread_mutex_unlock(&lock);
             pthread_join(cpu_thread,NULL);
             vpi_printf("%s firmware_cosim: frames=%u transactions=%u cycles=%u rc=%d\n",
-                result_code==0 && frames==192 ? "PASS" : "FAIL",
+                result_code==0 && frames==768 ? "PASS" : "FAIL",
                 frames,transactions,atomic_load(&clock_cycles),result_code);
             vpi_control(vpiFinish,result_code!=0); return 0;
         }
@@ -119,7 +158,13 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
             int valid=1;
             result=0;
             if(!direction && address==SYSID_BASE) result=0x55415254u;
-            else if(!direction && address==JTAG_UART_BASE) result=0; // JTAG RX empty
+            else if(!direction && address==JTAG_UART_BASE) {
+                static unsigned phase, index;
+                unsigned request=get(args[13]);
+                if (request!=phase) { phase=request;index=0; }
+                const char *cmd=phase==1 ? ":baud 9600\n" : phase==2 ? ":baud 115200\n" : phase==3 ? ":baud 230400\n" : "";
+                if(cmd[index]) result=(1u<<15)|(uint8_t)cmd[index++];
+            }
             else if(!direction && address==JTAG_UART_BASE+4u) result=16u<<16; // JTAG output drained
             else if(direction && address==JTAG_UART_BASE) {} // drop JTAG TX
             else if(direction && address==JTAG_UART_BASE+4u && data==0) {}

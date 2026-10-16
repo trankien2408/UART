@@ -1,6 +1,12 @@
 # UART APB: thiết kế RTL và cách kiểm thử
 
-Kết quả regression: **13/13 lượt PASS với Icarus Verilog**.
+**Cập nhật 16/10/2026:** thêm baud runtime SHADOW/ACTIVE/APPLY tại 0x18–0x20
+và interrupt UART tại 0x24–0x28. IRQ nối nội bộ về Nios V, không thêm chân board.
+Xem [BAUD_INTERRUPT.md](BAUD_INTERRUPT.md). Các mô tả baud chỉ bằng parameter
+bên dưới là thiết kế gốc; hiện parameter chọn baud reset, runtime dùng divider.
+
+
+Kết quả regression: **15/15 lượt PASS với Icarus Verilog**.
 Phạm vi và số liệu cụ thể nằm trong [VALIDATION.md](VALIDATION.md).
 
 Nguồn yêu cầu: `../../dti_uart.pdf`, Revision 0.0.1; map địa chỉ lấy từ
@@ -59,7 +65,8 @@ reserved ở [31:3].
 `PSTRB` áp dụng từng byte lane. Các field đều nằm trong byte thấp nên chỉ
 `PSTRB[0]` làm thay đổi register. Ghi với strobe = 0 hoặc chỉ các byte cao là
 no-op tại register RW hợp lệ. Ghi RO vẫn là lỗi bất kể strobe. Read dùng PSTRB=0.
-Địa chỉ không thuộc 6 offset trên, kể cả địa chỉ không căn hàng 4 byte, trả lỗi;
+Ngoài 6 offset cơ bản trên, 5 offset mới được mô tả trong BAUD_INTERRUPT.md.
+Địa chỉ không thuộc các offset hợp lệ, kể cả địa chỉ không căn hàng 4 byte, trả lỗi;
 không decode bỏ qua các bit cao nên không tạo alias.
 
 ## APB và ranh giới hai module mới

@@ -13,6 +13,6 @@ cd "$sim_dir"
 iverilog -g2012 -Wall -s tb_firmware_cosim -o "$build_dir/test.vvp" -f rtl.f \
     ../rtl/avalon_apb_bridge.v ../rtl/uart_avalon.v ../tb/tb_firmware_cosim.sv \
     > results/firmware_cosim/compile_rtl.log 2>&1
-timeout 120 vvp -M "$build_dir" -m firmware_cosim "$build_dir/test.vvp" \
+timeout 300 vvp -M "$build_dir" -m firmware_cosim "$build_dir/test.vvp" \
     > results/firmware_cosim/run.log 2>&1
 grep '^PASS firmware_cosim:' results/firmware_cosim/run.log

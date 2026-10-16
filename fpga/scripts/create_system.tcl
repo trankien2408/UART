@@ -53,6 +53,8 @@ foreach {agent base} {
     add_connection cpu.data_manager $agent
     set_connection_parameter_value cpu.data_manager/$agent baseAddress $base
 }
+add_connection cpu.platform_irq_rx uart.irq
+set_connection_parameter_value cpu.platform_irq_rx/uart.irq irqNumber 1
 add_connection cpu.platform_irq_rx jtag_uart.irq
 set_connection_parameter_value cpu.platform_irq_rx/jtag_uart.irq irqNumber 0
 foreach {name type direction internal} {

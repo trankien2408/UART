@@ -51,3 +51,9 @@ set_interface_property serial associatedReset reset
 foreach {port dir} {rx Input tx Output cts_n Input rts_n Output} {
     add_interface_port serial $port $port $dir 1
 }
+
+add_interface irq interrupt sender
+set_interface_property irq associatedClock clock
+set_interface_property irq associatedReset reset
+set_interface_property irq associatedAddressablePoint avalon
+add_interface_port irq irq irq Output 1

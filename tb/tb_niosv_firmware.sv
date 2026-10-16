@@ -8,7 +8,7 @@ module tb_niosv_firmware;
     wire [1:0] LEDG;
     de2_115_uart_top dut(.*);
     localparam integer BIT_NS=8681; // independent 115200-baud host clock
-    integer echoed=0;
+    integer echoed=0, irq_entries=0;
     integer instruction_responses=0, data_commands=0;
     reg [31:0] last_instruction_address=0, last_instruction=0, last_data_address=0;
     reg ready_seen=0;
@@ -35,10 +35,13 @@ module tb_niosv_firmware;
             // CSRRS rd, csr, x0: the three CSR reads in the HAL trap vector.
             if(retire_insn[19:0] == 20'h02573 && retire_insn[31:20] == 12'h342) begin
                 first_cause=retire_value;
-                cause_seen=1;
+                cause_seen=!retire_value[31];
+                if (retire_value[31]) irq_entries=irq_entries+1;
+                else begin
                 $display("UART_SIM: first trap mcause=%h", first_cause);
                 for(integer j=(trace_count>64 ? trace_count-64 : 0);j<trace_count;j++)
                     $display("UART_SIM: trace pc=%h insn=%h",trace_pc[j%64],trace_insn[j%64]);
+                end
             end
             if(cause_seen && retire_insn == 32'h341025f3) begin
                 first_epc=retire_value;
@@ -107,10 +110,15 @@ module tb_niosv_firmware;
         wait(LEDG[0]===1);
         $display("Nios V firmware echo READY at %0t",$time);
         repeat(100) @(negedge CLOCK_50);
-        for(integer i=0;i<32;i++) begin
-            echo_one((i*37)&255);
-            if((i%8)==7) $display("UART_SIM: verified %0d/32 UART echo bytes",i+1);
+        // Printable ASCII avoids interpreting test payload as editor controls.
+        for(integer i=0;i<4;i++) begin
+            for(integer j=0;j<8;j++) echo_one(8'h41+i*8+j);
+            fork
+                send_byte(8'h0a);
+                begin expect_byte(8'h0d);expect_byte(8'h0a);end
+            join
         end
+        if(irq_entries==0) $fatal(1,"no CPU interrupt entry observed");
         // KEY0 restarts the same image in on-chip RAM; RAM data is retained.
         KEY0=0; repeat(10) @(negedge CLOCK_50);
         if(LEDG!==0) $fatal(1,"board reset did not clear status LEDs");
@@ -118,7 +126,7 @@ module tb_niosv_firmware;
         $display("UART_SIM: firmware READY after second reset at %0t",$time);
         repeat(100) @(negedge CLOCK_50);
         echo_one(8'h5a);
-        $display("PASS tb_niosv_firmware: real Nios V CPU, C boot twice, external echoes=%0d",echoed);
+        $display("PASS tb_niosv_firmware: real Nios V CPU, C boot twice, external echoes=%0d irq_entries=%0d",echoed,irq_entries);
         $finish;
     end
     initial begin #25000000; $fatal(1,"UART_SIM: full SoC simulation watchdog after 25 ms"); end

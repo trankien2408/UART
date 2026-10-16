@@ -86,3 +86,37 @@ int dti_receive(const dti_uart *dev, uint8_t *byte)
     } while ((uint32_t)(uart_cycles()-start) < dev->timeout_cycles);
     return DTI_TIMEOUT;
 }
+
+int dti_baud_divider(uint32_t clock_hz, uint32_t baud, uint16_t *divider, uint32_t *actual)
+{
+    if (!clock_hz || !baud || !divider) return DTI_INVALID;
+    uint64_t target = (uint64_t)baud * 16u;
+    uint64_t div = ((uint64_t)clock_hz + target/2u) / target;
+    if (!div || div > 65535u) return DTI_INVALID;
+    uint64_t product = target * div;
+    uint64_t diff = product > clock_hz ? product-clock_hz : clock_hz-product;
+    if (diff * 100u > product * 2u) return DTI_INVALID;
+    *divider = (uint16_t)div;
+    if (actual) *actual = (uint32_t)(((uint64_t)clock_hz + div*8u)/(div*16u));
+    return DTI_OK;
+}
+int dti_set_baud(const dti_uart *dev, uint32_t clock_hz, uint32_t baud, uint32_t *actual)
+{
+    uint16_t div;
+    uint32_t rate;
+    if (dti_baud_divider(clock_hz, baud, &div, &rate)!=DTI_OK) return DTI_INVALID;
+    uart_mmio_write(dev->base + DTI_BAUD_SHADOW, div);
+    uint32_t start = uart_cycles();
+    do {
+        if (!(uart_mmio_read(dev->base + DTI_BAUD_CONTROL) & DTI_BAUD_BUSY)) {
+            uart_mmio_write(dev->base + DTI_BAUD_CONTROL, DTI_BAUD_REJECTED | DTI_BAUD_APPLY);
+            uint32_t status = uart_mmio_read(dev->base + DTI_BAUD_CONTROL);
+            if (!(status & DTI_BAUD_REJECTED) &&
+                uart_mmio_read(dev->base + DTI_BAUD_ACTIVE)==div) {
+                if (actual) *actual=rate;
+                return DTI_OK;
+            }
+        }
+    } while ((uint32_t)(uart_cycles()-start) < dev->timeout_cycles);
+    return DTI_TIMEOUT;
+}

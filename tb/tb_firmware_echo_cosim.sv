@@ -13,12 +13,14 @@ module tb_firmware_echo_cosim;
     wire cts_n=0;
     wire tx, rts_n;
     reg rx=1;
+    wire irq;
     uart_avalon dut(.*);
     reg accepted=0, rvalid=0, wvalid=0;
     reg [31:0] rdata=0, cycles=0, control=0;
     reg [1:0] response=0;
     integer received=0;
-    localparam integer BIT_NS=8681;
+    integer BIT_NS=8681;
+    reg [31:0] baud_phase=0;
     always @(posedge clk) begin
         cycles<=cycles+1;
         accepted<=reset_n && (av_read || av_write) && !av_waitrequest;
@@ -27,7 +29,7 @@ module tb_firmware_echo_cosim;
     end
     always @(negedge clk) if(reset_n)
         $firmware_tick(av_address,av_read,av_write,av_writedata,av_byteenable,
-                       accepted,rvalid,wvalid,rdata,response,cycles,control);
+                       accepted,rvalid,wvalid,rdata,response,cycles,control,irq,baud_phase);
     always @(control) if(control[3]) $fatal(1,"C echo application reported error");
     task send_byte(input [7:0] value);
         begin
@@ -80,7 +82,22 @@ module tb_firmware_echo_cosim;
             end
         join
         repeat(12000) begin @(posedge clk); if(tx!==1) $fatal(1,"extra TX byte"); end
-        $display("PASS firmware_echo_cosim: actual C app + UART RTL, %0d output bytes, line endings, burst, JTAG modeled",received);
+        // Real application parses the JTAG command and changes actual RTL baud.
+        baud_phase=1;
+        wait(dut.uart.u_registers.baud_div_o==326);BIT_NS=104167;
+        #300000;
+        for(integer i=0;i<5;i++)begin
+            fork send_byte("h"+i);expect_byte("h"+i);join
+        end
+        fork send_byte(10);begin expect_byte(13);expect_byte(10);end join
+        #300000;baud_phase=2;
+        wait(dut.uart.u_registers.baud_div_o==27);BIT_NS=8681;
+        #300000;
+        fork send_byte("Z");expect_byte("Z");join
+        fork send_byte(10);begin expect_byte(13);expect_byte(10);end join
+        #300000;baud_phase=3;#300000;
+        if(dut.uart.u_registers.baud_div_o!=27)$fatal(1,"unsupported baud must not change active divider");
+        $display("PASS firmware_echo_cosim: actual C app + UART RTL, %0d output bytes, line endings, burst, real IRQ serviced, JTAG baud commands 9600/115200 and rejected 230400",received);
         $finish;
     end
     initial begin #100000000; $fatal(1,"echo co-simulation watchdog"); end

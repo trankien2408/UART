@@ -3,7 +3,8 @@
 #include "dti_uart.h"
 #include "uart_platform.h"
 static uint32_t tick, status, cfg, txdata, rxdata, finish;
-static uint32_t fifo_status;
+static uint32_t fifo_status,shadow_div=27,active_div=27,baud_status;
+static int reject_apply;
 static unsigned writes, starts, rx_reads;
 static int complete_tx;
 #define BASE ((uintptr_t)0x21000u)
@@ -12,6 +13,9 @@ uint32_t uart_mmio_read(uintptr_t address)
 {
     if(complete_tx && !(status&1) && (int32_t)(tick-finish)>=0) status|=1;
     switch(address-BASE) {
+    case DTI_BAUD_SHADOW: return shadow_div;
+    case DTI_BAUD_ACTIVE: return active_div;
+    case DTI_BAUD_CONTROL: return baud_status;
     case DTI_FIFO_STATUS: return fifo_status;
     case DTI_STATUS: return status;
     case DTI_CFG: return cfg;
@@ -25,6 +29,14 @@ void uart_mmio_write(uintptr_t address,uint32_t value)
 {
     writes++;
     switch(address-BASE) {
+    case DTI_BAUD_SHADOW: shadow_div=value; break;
+    case DTI_BAUD_CONTROL:
+        if (value&DTI_BAUD_REJECTED) baud_status &= ~DTI_BAUD_REJECTED;
+        if (value&DTI_BAUD_APPLY) {
+            if (reject_apply) baud_status |= DTI_BAUD_REJECTED;
+            else active_div=shadow_div;
+        }
+        break;
     case DTI_FIFO_STATUS: fifo_status &= ~(value & DTI_RX_OVERRUN); break;
     case DTI_CFG: assert(status&1); cfg=value; break;
     case DTI_TX: assert(status&1); txdata=value; break;
@@ -80,6 +92,21 @@ int main(void)
     assert(dti_try_queue(&dev,0x32)==DTI_OK && txdata==0x32 && starts==4);
     fifo_status=DTI_RX_OVERRUN|DTI_RX_FULL;
     dti_clear_overrun(&dev); assert(dti_fifo_status(&dev)==DTI_RX_FULL);
+    uint16_t divider; uint32_t actual;
+    assert(dti_baud_divider(50000000,9600,&divider,&actual)==DTI_OK && divider==326 && actual==9586);
+    assert(dti_baud_divider(50000000,115200,&divider,&actual)==DTI_OK && divider==27);
+    assert(dti_baud_divider(50000000,230400,&divider,&actual)==DTI_INVALID);
+    assert(dti_baud_divider(50000000,3125000,&divider,&actual)==DTI_OK && divider==1);
+    assert(dti_baud_divider(50000000,0,&divider,&actual)==DTI_INVALID);
+    assert(dti_baud_divider(0,9600,&divider,&actual)==DTI_INVALID);
+    assert(dti_baud_divider(50000000,1,&divider,&actual)==DTI_INVALID);
+    assert(dti_baud_divider(50000000,0xffffffffu,&divider,&actual)==DTI_INVALID);
+    assert(dti_baud_divider(50000000,9600,0,&actual)==DTI_INVALID);
+    assert(dti_set_baud(&dev,50000000,9600,&actual)==DTI_OK && active_div==326);
+    baud_status=DTI_BAUD_BUSY;before=writes;
+    assert(dti_set_baud(&dev,50000000,115200,0)==DTI_TIMEOUT && active_div==326 && writes==before+1);
+    baud_status=0;reject_apply=1;tick=0xfffffff0u;
+    assert(dti_set_baud(&dev,50000000,115200,0)==DTI_TIMEOUT && active_div==326 && tick<1000);
     puts("PASS test_driver: 24 configs, invalid inputs, nonblocking RX/TX, parity, timeouts, no retransmit, cycle wrap");
     return 0;
 }

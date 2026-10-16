@@ -1,3 +1,35 @@
+# Baud động + interrupt — 16/10/2026
+
+- RTL regression: **15/15 PASS**. Giữ toàn bộ kiểm thử FIFO/frame/baud cũ;
+  thêm `tb_baud_dynamic` 263.816 checks và `tb_baud_irq` 269 checks cho serial nhiều baud,
+  SHADOW/APPLY, CTS/RX busy, start trùng giao dịch APPLY, mask/level IRQ,
+  parity, overrun, byte strobe, RO/unmapped error và reset.
+- Native C/UBSan: PASS driver, chat và ISR; gồm vòng wrap ring, tràn ring,
+  TX_DONE mask, lỗi đăng ký ISR, lệnh baud/busy và timeout/wrap.
+- Avalon bridge/UART SoC: PASS 500 lệnh ngẫu nhiên và 97 frame loopback.
+- C driver + RTL: **768 frame PASS**, 2.580.347 giao dịch, 12.901.740 chu kỳ;
+  gồm 24 format ở mặc định và đổi baud qua C tại 9600/57600/115200.
+- C chat + RTL: **538 byte output PASS**, giữ bài burst/dòng cũ, IRQ từ RTL
+  được mô hình host gọi ISR C; JTAG đổi 9600 → 115200 và từ chối 230400.
+- Platform Designer generate PASS; BSP có UART_IRQ=1, controller ID=0.
+- RISC-V ELF echo/selftest/scope build PASS; echo text/data/bss =
+  23552/1848/3356 byte.
+- Questa compile toàn SoC + board top + testbench PASS. Đã sửa lỗi thứ tự
+  khai báo net mà Icarus chấp nhận nhưng Questa báo lỗi trong lần kiểm tra đầu.
+- Quartus full compile/timing PASS, worst constrained slack **+0,137 ns**;
+  **chưa hardware-ready** vì Warning 12189 Simulation-Only trong môi trường
+  công cụ. Chạy lại compile bằng terminal thường có license hợp lệ trước nạp.
+- Full CPU execution simulation: **BLOCKED** ở precheck socket TCP, không có
+  kết quả chạy ELF/ISR trên mô hình Nios V cho bản mới.
+- **Chưa nạp/đo bản baud+IRQ mới trên kit trong lần này.** C+RTL dùng C native,
+  không thay thế full CPU simulation hoặc xác nhận hai terminal/oscilloscope.
+
+Hướng dẫn build/nạp, đổi baud và register map:
+[BAUD_INTERRUPT.md](../docs/BAUD_INTERRUPT.md).
+Các phần bên dưới là kết quả lịch sử của phiên bản cũ.
+
+---
+
 # Kết quả bản FIFO — 15/10/2026
 
 - Icarus regression: **13/13 PASS**. FIFO: 30.000 chu kỳ ngẫu nhiên tại depth

@@ -1,5 +1,10 @@
 # FIFO TX/RX — bản mở rộng ngày 15/10/2026
 
+Cập nhật 16/10/2026: bản hiện tại bổ sung baud động và interrupt; xem
+[BAUD_INTERRUPT.md](BAUD_INTERRUPT.md). FIFO giữ nguyên độ sâu; RX được ISR
+chuyển sang ring phần mềm, main tiếp tục xử lý chat theo dòng.
+
+
 ## Luồng dữ liệu
 
 ```text

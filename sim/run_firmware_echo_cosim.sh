@@ -9,7 +9,7 @@ cd "$build_dir"
 iverilog-vpi --name=firmware_cosim -DUART_HOST_TEST -DUART_DEMO_TEST -DUART_ECHO_COSIM \
     -I"$sim_dir/../firmware" -I"$sim_dir/../firmware/tests" -I"$sim_dir/../firmware/build/bsp" \
     "$sim_dir/../tb/firmware_cosim.c" "$sim_dir/../firmware/main.c" \
-    "$sim_dir/../firmware/console.c" "$sim_dir/../firmware/dti_uart.c" -lpthread \
+    "$sim_dir/../firmware/uart_irq.c" "$sim_dir/../firmware/console.c" "$sim_dir/../firmware/dti_uart.c" -lpthread \
     > "$result_dir/compile_c.log" 2>&1
 cd "$sim_dir"
 iverilog -g2012 -Wall -s tb_firmware_echo_cosim -o "$build_dir/test.vvp" -f rtl.f \

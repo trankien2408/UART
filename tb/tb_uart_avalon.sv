@@ -12,6 +12,7 @@ module tb_uart_avalon;
     reg cts_n=0;
     wire tx, rts_n;
     wire rx=tx;
+    wire irq;
     uart_avalon dut(.*);
     integer checks=0, frames=0;
     integer bits, stop, parity, pattern, n;
@@ -60,7 +61,7 @@ module tb_uart_avalon;
         rd(12'hc,value); check(value==1,"reset status");
         // Decode errors and write strobes must survive the generated bus contract.
         access(1,12'hc,0,15,2,value);
-        access(0,12'h18,0,0,2,value);
+        access(0,12'h2c,0,0,2,value);
         access(0,12'h104,0,0,2,value);
         access(0,12'h1,0,0,2,value);
         wr(4,3);

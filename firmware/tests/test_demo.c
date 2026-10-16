@@ -6,11 +6,24 @@
 #include "dti_uart.h"
 #include "uart_platform.h"
 #include "console.h"
+#include "uart_irq.h"
 
 int uart_demo_init(void);
 void uart_demo_poll(void);
 static uint32_t status, rx_byte, tx_byte, cfg, control, cycles, sysid;
 static uint32_t fifo_errors;
+static uint32_t irq_mask, shadow_div=27, active_div=27, baud_status;
+static void (*irq_handler)(void *);
+static void *irq_context;
+static unsigned locked;
+uint32_t uart_irq_lock(void) { uint32_t old=locked;locked=1;return old; }
+void uart_irq_unlock(uint32_t state) { locked=state; }
+int uart_irq_register(void (*fn)(void *),void *context) { irq_handler=fn;irq_context=context;return 0; }
+static uint32_t sources(void) {
+    return ((status&DTI_RX_DONE) ? DTI_IRQ_RX : 0u) |
+           ((status&DTI_TX_DONE) ? DTI_IRQ_TX_DONE : 0u) |
+           ((fifo_errors&DTI_RX_OVERRUN) ? DTI_IRQ_OVERRUN : 0u);
+}
 static unsigned starts, rx_reads, space, log_count;
 static uint8_t sent[4096];
 static int jtag_pending;
@@ -28,6 +41,10 @@ uint32_t uart_mmio_read(uintptr_t address)
         return (1u << 15) | jtag_byte;
     }
     if (address == UART_BASE + DTI_FIFO_STATUS) return fifo_errors | ((status & DTI_TX_DONE) ? 0u : DTI_TX_FULL);
+    if (address == UART_BASE + DTI_INT_STATUS) return sources();
+    if (address == UART_BASE + DTI_INT_ENABLE) return irq_mask;
+    if (address == UART_BASE + DTI_BAUD_CONTROL) return baud_status;
+    if (address == UART_BASE + DTI_BAUD_ACTIVE) return active_div;
     if (address == UART_BASE + DTI_STATUS) return status;
     if (address == UART_BASE + DTI_RX) {
         assert(status & DTI_RX_DONE); // Khong doc RX rong: tren RTL se treo bus.
@@ -49,6 +66,17 @@ void uart_mmio_write(uintptr_t address, uint32_t value)
         log_data[log_count] = 0;
         return;
     }
+    if (address == UART_BASE+DTI_INT_ENABLE) { irq_mask=value;return; }
+    if (address == UART_BASE+DTI_FIFO_STATUS) { fifo_errors &= ~(value&DTI_RX_OVERRUN);return; }
+    if (address == UART_BASE+DTI_BAUD_SHADOW) { shadow_div=value;return; }
+    if (address == UART_BASE+DTI_BAUD_CONTROL) {
+        if (value&DTI_BAUD_REJECTED) baud_status &= ~DTI_BAUD_REJECTED;
+        if (value&DTI_BAUD_APPLY) {
+            if ((status&DTI_TX_DONE) && !(baud_status&DTI_BAUD_BUSY) && shadow_div) active_div=shadow_div;
+            else baud_status |= DTI_BAUD_REJECTED;
+        }
+        return;
+    }
     assert(status & DTI_TX_DONE);
     if (address == UART_BASE + DTI_CFG) cfg = value;
     else if (address == UART_BASE + DTI_TX) tx_byte = value;
@@ -60,6 +88,7 @@ void uart_mmio_write(uintptr_t address, uint32_t value)
 }
 static void reset_model(void)
 {
+    irq_mask=0;locked=0;shadow_div=active_div=27;baud_status=0;
     fifo_errors = 0;
     status = DTI_TX_DONE;
     rx_byte = tx_byte = cfg = control = cycles = 0;
@@ -72,6 +101,7 @@ static void reset_model(void)
 static void poll(unsigned available)
 {
     space = available;
+    if (!locked && irq_handler && (irq_mask & sources())) irq_handler(irq_context);
     uart_demo_poll();
     assert(available - space <= 16u); // Log khong chiem CPU qua lau.
 }
@@ -210,8 +240,18 @@ int main(void)
     for(unsigned i=0;i<log_count;++i) assert(log_data[i]=='X');
 
     boot(); fifo_errors=DTI_RX_OVERRUN; receive('x',0);poll(64);flush_log();
-    assert(control==12u && rx_reads==0 && strstr(log_data,"RX FIFO overrun"));
-    fifo_errors=0;poll(64);assert(rx_reads==0); // fatal error needs reset
+    assert(control==12u && strstr(log_data,"RX FIFO overrun"));
+    unsigned reads_before=rx_reads;fifo_errors=0;poll(64);assert(rx_reads==reads_before); // fatal error needs reset
+
+    boot(); input(1,":baud 9600\r\n");
+    assert(active_div==326 && strstr(log_data,"actual 9586")); expect_uart("");
+    boot(); input(1,":baud 230400\n");
+    assert(active_div==27 && strstr(log_data,"invalid rate")); expect_uart("");
+    boot(); baud_status=DTI_BAUD_BUSY;input(1,":baud 9600\r");
+    cycles+=(uint32_t)ALT_CPU_FREQ/5u;flush_log();
+    assert(active_div==27 && strstr(log_data,"busy; unchanged"));
+    boot(); input(0,"unfinished");clear_output();input(1,":baud 9600\n");
+    assert(active_div==27 && strstr(log_data,"finish UART input line"));
 
     reset_model();sysid=0;assert(uart_demo_init()==-1);flush_log();
     assert(control==8u && starts==0 && strstr(log_data,"init/system ID"));

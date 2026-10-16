@@ -13,7 +13,7 @@ module uart_avalon #(
     output wire av_readdatavalid, av_writeresponsevalid,
     output wire [1:0] av_response,
     input wire rx, cts_n,
-    output wire tx, rts_n
+    output wire tx, rts_n, irq
 );
     wire psel, penable, pwrite, pready, pslverr;
     wire [11:0] paddr;
@@ -32,6 +32,6 @@ module uart_avalon #(
         .clk(clk), .pclk(clk), .reset_n(reset_n), .presetn(reset_n),
         .psel(psel), .penable(penable), .pwrite(pwrite), .paddr(paddr),
         .pwdata(pwdata), .pstrb(pstrb), .pready(pready), .pslverr(pslverr),
-        .prdata(prdata), .rx(rx), .tx(tx), .cts_n(cts_n), .rts_n(rts_n)
+        .prdata(prdata), .rx(rx), .tx(tx), .cts_n(cts_n), .rts_n(rts_n), .irq(irq)
     );
 endmodule

@@ -16,6 +16,7 @@ module rx_topmodule (
     output wire       rx_done_o,
     output wire       parity_error_o,
     output wire       frame_error_o,
+    output wire       baud_idle_o,
     output wire       rts_n
 );
 
@@ -28,6 +29,7 @@ module rx_topmodule (
     wire       shift_rx_en_w;
     wire       latch_parity_en_w;
     wire       begin_frame_w, data_phase_w;
+    assign baud_idle_o = !rts_n && rx_s_w && !start_rx_w;
     reg [5:0] frame_cfg;
     wire [5:0] cfg = rts_n ? frame_cfg :
         {stop_bit_num_i, parity_type_i, parity_en_i, data_bit_num_i};

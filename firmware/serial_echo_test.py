@@ -8,13 +8,16 @@ import serial
 
 parser = argparse.ArgumentParser()
 parser.add_argument('port', help='USB-UART serial device, e.g. /dev/ttyUSB0')
+parser.add_argument('--baud', type=int, default=115200)
 parser.add_argument('--count', type=int, default=1024, help='number of printable payload bytes')
 args = parser.parse_args()
+if args.baud <= 0:
+    parser.error('--baud must be positive')
 if args.count <= 0:
     parser.error('--count must be positive')
 rng = random.Random(20261011)
 # Hold ESP32 EN low physically while using its USB-UART bridge.
-with serial.Serial(args.port, 115200, timeout=2, write_timeout=2,
+with serial.Serial(args.port, args.baud, timeout=max(2, 1464/args.baud + 1), write_timeout=max(2, 1464/args.baud + 1),
                    bytesize=8, parity='N', stopbits=1, rtscts=False,
                    xonxoff=False, dsrdtr=False) as port:
     port.reset_input_buffer()
@@ -33,4 +36,4 @@ with serial.Serial(args.port, 115200, timeout=2, write_timeout=2,
         lines += 1
     if port.read(1):
         raise SystemExit('FAIL: unexpected extra/duplicated echo')
-print(f'PASS external UART chat echo: {args.count} payload bytes, {lines} burst lines, CR/LF/CRLF, 115200 8N1')
+print(f'PASS external UART chat echo: {args.count} payload bytes, {lines} burst lines, CR/LF/CRLF, {args.baud} 8N1')
