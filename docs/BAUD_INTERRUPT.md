@@ -222,3 +222,11 @@ console_echo log hex cũ, gộp helper gửi một byte vào console_text và ch
 uart_irq_stop ở phạm vi nội bộ ISR. Không thay đổi register map hoặc thuật toán
 baud/IRQ; polling API vẫn cần cho scope/self-test. Xem đầu VALIDATION.md cho
 kết quả kiểm tra sau dọn code.
+
+## Giao diện output generator
+
+Generator hiện xuất hai cổng `tick_tx` và `tick_rx`; dti_uart nối tương ứng
+trực tiếp đến TX core và RX core. Không còn cổng `baud_tick` chung ở giao diện.
+Hai cổng dùng cùng divider và pha (`assign tick_rx = tick_tx`), nên vẫn chỉ cần
+một counter và một flip-flop tick. Bộ đếm RX idle dùng tick_rx. Chưa có divider
+hoặc yêu cầu reload riêng cho từng chiều; điều kiện APPLY vẫn kiểm tra cả TX/RX.

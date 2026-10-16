@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 // Integration contract: clk and pclk MUST be the same clock net (no CDC).
 // reset_n/presetn are active-low; asserting either resets the entire peripheral.
-module dti_uart #(
+module apb_uart #(
     parameter integer CLK_FREQ = 50000000,
     parameter integer BAUDRATE = 115200
 ) (
@@ -16,7 +16,7 @@ module dti_uart #(
     output wire tx, rts_n, irq
 );
     wire rst_n = reset_n && presetn;
-    wire baud_tick, access, wr, rd_ready, wr_ready, reg_error;
+    wire tick_tx, tick_rx, access, wr, rd_ready, wr_ready, reg_error;
     wire [3:0] strb;
     wire [11:0] addr;
     wire [31:0] wdata, rdata, tx_data;
@@ -31,7 +31,7 @@ module dti_uart #(
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) rx_quiet_ticks<=0;
         else if (baud_apply || !rx_idle) rx_quiet_ticks<=0;
-        else if (baud_tick && rx_quiet_ticks<16) rx_quiet_ticks<=rx_quiet_ticks+1'b1;
+        else if (tick_rx && rx_quiet_ticks<16) rx_quiet_ticks<=rx_quiet_ticks+1'b1;
     end
 
     // CTS is asynchronous to the FPGA clock. Fail closed while reset is active.
@@ -69,17 +69,17 @@ module dti_uart #(
     );
     baud_rate_gen u_baud (
         .clk(clk), .rst_n(rst_n), .divider_i(baud_div),
-        .reload_i(baud_apply), .baud_tick(baud_tick)
+        .reload_i(baud_apply), .tick_tx(tick_tx), .tick_rx(tick_rx)
     );
     tx_topmodule u_tx (
-        .clk(clk), .reset_n(rst_n), .tick_tx(baud_tick), .tx_data_i(tx_data[7:0]),
+        .clk(clk), .reset_n(rst_n), .tick_tx(tick_tx), .tx_data_i(tx_data[7:0]),
         .data_bit_num_i(data_bits), .stop_bit_num_i({1'b0, stop_bits}),
         .parity_en_i(parity_en), .parity_type_i(parity_type),
         .start_tx_i(start_tx), .cts_n(cts_sync), .tx(tx),
         .tx_busy_o(tx_busy), .tx_done_o(tx_done)
     );
     rx_topmodule u_rx (
-        .clk(clk), .reset_n(rst_n), .tick_rx(baud_tick), .rx(rx),
+        .clk(clk), .reset_n(rst_n), .tick_rx(tick_rx), .rx(rx),
         .data_bit_num_i(data_bits), .stop_bit_num_i({1'b0, stop_bits}),
         .parity_en_i(parity_en), .parity_type_i(parity_type),
         .rx_data_o(rx_data), .rx_done_o(rx_done), .parity_error_o(parity_error),

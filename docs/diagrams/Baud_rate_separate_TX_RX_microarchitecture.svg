@@ -1,0 +1,344 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1700" viewBox="0 0 2400 1700"><defs>
+<marker id="data" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#243d53"/></marker>
+<marker id="control" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#16718a"/></marker>
+<marker id="clock" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#c34848"/></marker>
+<marker id="reset" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#8056a5"/></marker>
+</defs><g font-family="Noto Sans, DejaVu Sans, sans-serif">
+<rect x="0" y="0" width="2400" height="1700" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+<text x="65" y="52" font-size="34" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">BAUD RATE GENERATOR — HAI NHÁNH TX / RX RIÊNG</tspan>
+</text>
+<text x="65" y="93" font-size="24" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">Thiết kế đề xuất: 2 counter 16 bit + 2 flip-flop tick • cùng divider_i, reload_i, clk và rst_n</tspan>
+</text>
+<polyline points="65,165 470,165" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="65" y="144" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">divider_i[15:0]</tspan>
+</text>
+<circle cx="180" cy="165" r="4" fill="#243d53"/>
+<polyline points="180,165 180,1010" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="470" y="130" width="180" height="70" rx="12" fill="#deeedc" stroke="#6c9a69" stroke-width="2"/>
+<text x="560" y="172" font-size="22" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="560" dy="0">divider_i == 0</tspan>
+</text>
+<polyline points="650,165 720,165 720,150 808,150" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<polyline points="65,215 760,215 760,180 808,180" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="65" y="240" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">reload_i</tspan>
+</text>
+<path d="M800,135 Q822,165 800,195 Q865,195 900,165 Q865,135 800,135 Z" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<polyline points="900,165 1050,165" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="955" y="144" font-size="24" fill="#16718a" text-anchor="start" font-weight="bold">
+<tspan x="955" dy="0">flush</tspan>
+</text>
+<text x="1110" y="162" font-size="22" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="1110" dy="0">flush = reload_i OR (divider_i == 0)</tspan>
+</text>
+<text x="1110" y="197" font-size="18" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="1110" dy="0">Tên net flush xuất hiện ở cả hai nhánh bên dưới.</tspan>
+</text>
+<rect x="265" y="255" width="1870" height="580" rx="22" fill="#f8fbff" stroke="#8aa3b8" stroke-width="2"/>
+<rect x="265" y="875" width="1870" height="580" rx="22" fill="#f8fbff" stroke="#8aa3b8" stroke-width="2"/>
+<polyline points="90,260 90,1360" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="44" y="285" font-size="20" fill="#c34848" text-anchor="start" font-weight="bold">
+<tspan x="44" dy="0">clk</tspan>
+</text>
+<polyline points="140,260 140,1420" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="149" y="285" font-size="20" fill="#8056a5" text-anchor="start" font-weight="bold">
+<tspan x="149" dy="0">rst_n</tspan>
+</text>
+<g transform="translate(0,300)">
+<text x="300" y="-20" font-size="26" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="300" dy="0">NHÁNH TX: counter + flip-flop riêng</tspan>
+</text>
+<polyline points="180,90 1130,90 1130,50 1180,50" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="180" cy="90" r="4" fill="#243d53"/>
+<polyline points="1104,100 1116,80" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="1120" y="78" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1120" dy="0">16</tspan>
+</text>
+<rect x="1180" y="20" width="170" height="60" rx="0" fill="#e0eef8" stroke="#577084" stroke-width="2"/>
+<text x="1265" y="58" font-size="20" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">divider_i − 1</tspan>
+</text>
+<polyline points="1350,50 1380,50 1380,100 1350,100 1350,120" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="1020,165 1080,165 1080,40 932,40" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="1080" cy="165" r="4" fill="#243d53"/>
+<polyline points="1080,165 1260,165" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="1184,175 1196,155" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="1200" y="153" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1200" dy="0">16</tspan>
+</text>
+<text x="1100" y="143" font-size="20" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1100" dy="0">cnt_tx[15:0]</tspan>
+</text>
+<circle cx="900" cy="40" r="32" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<text x="900" y="48" font-size="23" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="900" dy="0">+1</tspan>
+</text>
+<polyline points="868,40 575,40 575,130 650,130" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="585" y="112" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="585" dy="0">+1</tspan>
+</text>
+<polyline points="580,210 650,210" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="565" y="240" font-size="20" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="565" dy="0">16&#x27;d0</tspan>
+</text>
+<polygon points="650,100 750,145 750,195 650,240" fill="#f6d8d4" stroke="#c27770" stroke-width="2.5"/>
+<text x="666" y="139" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="666" dy="0">0</tspan>
+</text>
+<text x="666" y="219" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="666" dy="0">1</tspan>
+</text>
+<text x="696" y="179" font-size="18" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="696" dy="0">MUX</tspan>
+</text>
+<polyline points="750,165 850,165" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="794,175 806,155" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="810" y="153" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="810" dy="0">16</tspan>
+</text>
+<rect x="850" y="120" width="170" height="110" rx="0" fill="#e5ddf1" stroke="#9475b2" stroke-width="2"/>
+<text x="935" y="155" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="935" dy="0">cnt_tx</tspan>
+</text>
+<text x="935" y="202" font-size="18" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="935" dy="0">16-bit register</tspan>
+</text>
+<text x="861" y="174" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="861" dy="0">D</tspan>
+</text>
+<text x="992" y="174" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="992" dy="0">Q</tspan>
+</text>
+<rect x="1260" y="120" width="180" height="90" rx="12" fill="#deeedc" stroke="#6c9a69" stroke-width="2"/>
+<text x="1350" y="160" font-size="32" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1350" dy="0">≥</tspan>
+</text>
+<text x="1350" y="193" font-size="17" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1350" dy="0">unsigned</tspan>
+</text>
+<polyline points="1440,165 1560,165" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<circle cx="1480" cy="165" r="4" fill="#16718a"/>
+<text x="1455" y="137" font-size="19" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="1455" dy="0">term_tx</tspan>
+</text>
+<polyline points="1480,165 1480,325 620,325 620,365 688,365" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<path d="M680,350 Q702,380 680,410 Q745,410 780,380 Q745,350 680,350 Z" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<text x="858" y="408" font-size="19" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="858" dy="0">clear_tx</tspan>
+</text>
+<polyline points="780,380 800,380 800,275 710,275 710,213" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="720" y="262" font-size="17" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="720" dy="0">S</tspan>
+</text>
+<polyline points="300,305 1500,305 1500,195 1550,195" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="300" y="284" font-size="23" fill="#16718a" text-anchor="start" font-weight="bold">
+<tspan x="300" dy="0">flush</tspan>
+</text>
+<circle cx="580" cy="305" r="4" fill="#16718a"/>
+<polyline points="580,305 580,395 688,395" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<path d="M1560,150 H1620 A30,30 0 0 1 1620,210 H1560 Z" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<circle cx="1555" cy="195" r="5" fill="white" stroke="#6c9a69" stroke-width="2.5"/>
+<text x="1605" y="242" font-size="19" fill="#16718a" text-anchor="middle" font-weight="normal">
+<tspan x="1605" dy="0">tick_tx_D</tspan>
+</text>
+<polyline points="1650,180 1770,180" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<rect x="1770" y="120" width="150" height="130" rx="0" fill="#fff0c6" stroke="#bd9a3b" stroke-width="2"/>
+<text x="1845" y="151" font-size="18" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1845" dy="0">D FLIP-FLOP</tspan>
+</text>
+<text x="1781" y="187" font-size="19" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1781" dy="0">D</tspan>
+</text>
+<text x="1890" y="187" font-size="19" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1890" dy="0">Q</tspan>
+</text>
+<text x="1845" y="212" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1845" dy="0">tick_tx</tspan>
+</text>
+<polyline points="1920,180 2085,180" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="1975" y="158" font-size="25" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="1975" dy="0">tick_tx</tspan>
+</text>
+<text x="1980" y="211" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1980" dy="0">1 bit</tspan>
+</text>
+<polyline points="90,440 1740,440 1740,220 1770,220" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#clock)"/>
+<circle cx="90" cy="440" r="4" fill="#c34848"/>
+<circle cx="825" cy="440" r="4" fill="#c34848"/>
+<polyline points="825,440 825,205 850,205" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#clock)"/>
+<path d="M850,197 L862,205 L850,213 M1770,212 L1782,220 L1770,228" fill="none" stroke="#c34848" stroke-width="2.5"/>
+<text x="866" y="224" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
+<tspan x="866" dy="0">clk</tspan>
+</text>
+<text x="1787" y="238" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
+<tspan x="1787" dy="0">clk</tspan>
+</text>
+<polyline points="140,500 1870,500 1870,255" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="140" cy="500" r="4" fill="#8056a5"/>
+<circle cx="970" cy="500" r="4" fill="#8056a5"/>
+<polyline points="970,500 970,235" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="970" cy="235" r="5" fill="white" stroke="#8056a5" stroke-width="2.5"/><circle cx="1870" cy="255" r="5" fill="white" stroke="#8056a5" stroke-width="2.5"/>
+<text x="890" y="249" font-size="16" fill="#8056a5" text-anchor="start" font-weight="normal">
+<tspan x="890" dy="0">CLR_n</tspan>
+</text>
+<text x="1790" y="274" font-size="16" fill="#8056a5" text-anchor="start" font-weight="normal">
+<tspan x="1790" dy="0">CLR_n</tspan>
+</text>
+</g>
+<g transform="translate(0,920)">
+<text x="300" y="-20" font-size="26" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="300" dy="0">NHÁNH RX: counter + flip-flop riêng</tspan>
+</text>
+<polyline points="180,90 1130,90 1130,50 1180,50" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="180" cy="90" r="4" fill="#243d53"/>
+<polyline points="1104,100 1116,80" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="1120" y="78" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1120" dy="0">16</tspan>
+</text>
+<rect x="1180" y="20" width="170" height="60" rx="0" fill="#e0eef8" stroke="#577084" stroke-width="2"/>
+<text x="1265" y="58" font-size="20" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">divider_i − 1</tspan>
+</text>
+<polyline points="1350,50 1380,50 1380,100 1350,100 1350,120" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="1020,165 1080,165 1080,40 932,40" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="1080" cy="165" r="4" fill="#243d53"/>
+<polyline points="1080,165 1260,165" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="1184,175 1196,155" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="1200" y="153" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1200" dy="0">16</tspan>
+</text>
+<text x="1100" y="143" font-size="20" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1100" dy="0">cnt_rx[15:0]</tspan>
+</text>
+<circle cx="900" cy="40" r="32" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<text x="900" y="48" font-size="23" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="900" dy="0">+1</tspan>
+</text>
+<polyline points="868,40 575,40 575,130 650,130" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="585" y="112" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="585" dy="0">+1</tspan>
+</text>
+<polyline points="580,210 650,210" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="565" y="240" font-size="20" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="565" dy="0">16&#x27;d0</tspan>
+</text>
+<polygon points="650,100 750,145 750,195 650,240" fill="#f6d8d4" stroke="#c27770" stroke-width="2.5"/>
+<text x="666" y="139" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="666" dy="0">0</tspan>
+</text>
+<text x="666" y="219" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="666" dy="0">1</tspan>
+</text>
+<text x="696" y="179" font-size="18" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="696" dy="0">MUX</tspan>
+</text>
+<polyline points="750,165 850,165" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="794,175 806,155" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="810" y="153" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="810" dy="0">16</tspan>
+</text>
+<rect x="850" y="120" width="170" height="110" rx="0" fill="#e5ddf1" stroke="#9475b2" stroke-width="2"/>
+<text x="935" y="155" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="935" dy="0">cnt_rx</tspan>
+</text>
+<text x="935" y="202" font-size="18" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="935" dy="0">16-bit register</tspan>
+</text>
+<text x="861" y="174" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="861" dy="0">D</tspan>
+</text>
+<text x="992" y="174" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="992" dy="0">Q</tspan>
+</text>
+<rect x="1260" y="120" width="180" height="90" rx="12" fill="#deeedc" stroke="#6c9a69" stroke-width="2"/>
+<text x="1350" y="160" font-size="32" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1350" dy="0">≥</tspan>
+</text>
+<text x="1350" y="193" font-size="17" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1350" dy="0">unsigned</tspan>
+</text>
+<polyline points="1440,165 1560,165" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<circle cx="1480" cy="165" r="4" fill="#16718a"/>
+<text x="1455" y="137" font-size="19" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="1455" dy="0">term_rx</tspan>
+</text>
+<polyline points="1480,165 1480,325 620,325 620,365 688,365" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<path d="M680,350 Q702,380 680,410 Q745,410 780,380 Q745,350 680,350 Z" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<text x="858" y="408" font-size="19" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="858" dy="0">clear_rx</tspan>
+</text>
+<polyline points="780,380 800,380 800,275 710,275 710,213" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="720" y="262" font-size="17" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="720" dy="0">S</tspan>
+</text>
+<polyline points="300,305 1500,305 1500,195 1550,195" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="300" y="284" font-size="23" fill="#16718a" text-anchor="start" font-weight="bold">
+<tspan x="300" dy="0">flush</tspan>
+</text>
+<circle cx="580" cy="305" r="4" fill="#16718a"/>
+<polyline points="580,305 580,395 688,395" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<path d="M1560,150 H1620 A30,30 0 0 1 1620,210 H1560 Z" fill="#deeedc" stroke="#6c9a69" stroke-width="2.5"/>
+<circle cx="1555" cy="195" r="5" fill="white" stroke="#6c9a69" stroke-width="2.5"/>
+<text x="1605" y="242" font-size="19" fill="#16718a" text-anchor="middle" font-weight="normal">
+<tspan x="1605" dy="0">tick_rx_D</tspan>
+</text>
+<polyline points="1650,180 1770,180" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<rect x="1770" y="120" width="150" height="130" rx="0" fill="#fff0c6" stroke="#bd9a3b" stroke-width="2"/>
+<text x="1845" y="151" font-size="18" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1845" dy="0">D FLIP-FLOP</tspan>
+</text>
+<text x="1781" y="187" font-size="19" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1781" dy="0">D</tspan>
+</text>
+<text x="1890" y="187" font-size="19" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1890" dy="0">Q</tspan>
+</text>
+<text x="1845" y="212" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1845" dy="0">tick_rx</tspan>
+</text>
+<polyline points="1920,180 2085,180" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="1975" y="158" font-size="25" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="1975" dy="0">tick_rx</tspan>
+</text>
+<text x="1980" y="211" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1980" dy="0">1 bit</tspan>
+</text>
+<polyline points="90,440 1740,440 1740,220 1770,220" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#clock)"/>
+<circle cx="90" cy="440" r="4" fill="#c34848"/>
+<circle cx="825" cy="440" r="4" fill="#c34848"/>
+<polyline points="825,440 825,205 850,205" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#clock)"/>
+<path d="M850,197 L862,205 L850,213 M1770,212 L1782,220 L1770,228" fill="none" stroke="#c34848" stroke-width="2.5"/>
+<text x="866" y="224" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
+<tspan x="866" dy="0">clk</tspan>
+</text>
+<text x="1787" y="238" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
+<tspan x="1787" dy="0">clk</tspan>
+</text>
+<polyline points="140,500 1870,500 1870,255" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="140" cy="500" r="4" fill="#8056a5"/>
+<circle cx="970" cy="500" r="4" fill="#8056a5"/>
+<polyline points="970,500 970,235" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="970" cy="235" r="5" fill="white" stroke="#8056a5" stroke-width="2.5"/><circle cx="1870" cy="255" r="5" fill="white" stroke="#8056a5" stroke-width="2.5"/>
+<text x="890" y="249" font-size="16" fill="#8056a5" text-anchor="start" font-weight="normal">
+<tspan x="890" dy="0">CLR_n</tspan>
+</text>
+<text x="1790" y="274" font-size="16" fill="#8056a5" text-anchor="start" font-weight="normal">
+<tspan x="1790" dy="0">CLR_n</tspan>
+</text>
+</g>
+<text x="65" y="1510" font-size="22" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">Cổng OR / AND dùng ký hiệu logic; chấm tròn là điểm nối, giao cắt không chấm không nối.</tspan>
+</text>
+<text x="65" y="1550" font-size="22" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">Mỗi nhánh: clear = flush OR terminal; counter_D = clear ? 0 : counter+1; tick_D = terminal AND NOT flush.</tspan>
+</text>
+<text x="65" y="1590" font-size="21" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">Hai bộ đếm có cùng divider/reset/reload nên tick_tx và tick_rx vẫn cùng tần số và pha trong điều kiện này.</tspan>
+</text>
+<text x="65" y="1630" font-size="21" fill="#97520d" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">Lưu ý: đây là sơ đồ tách nhánh theo yêu cầu; RTL hiện tại vẫn có một counter/flip-flop và chưa được sửa trong bước vẽ này.</tspan>
+</text>
+</g></svg>

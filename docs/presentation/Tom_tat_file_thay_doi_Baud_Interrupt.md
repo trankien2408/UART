@@ -9,7 +9,7 @@ Baud được ghi lúc chạy; IRQ được tạo từ trạng thái UART và đ
 
 | File | Vị trí | Nội dung |
 |---|---|---|
-|rtl/baud_rate_gen.v|L6: input wire [15:0] divider_i|Thêm divider_i 16 bit và reload_i; bộ đếm 16 bit tạo tick ×16 theo divider hiện tại. Khi APPLY: reset bộ đếm/tick; divider 0 dừng tick.|
+|rtl/baud_rate_gen.v|L6: input wire [15:0] divider_i|Thêm divider_i 16 bit và reload_i; bộ đếm 16 bit xuất tick_tx và tick_rx cùng nhịp ×16 theo divider hiện tại. Khi APPLY: reset bộ đếm/tick; divider 0 dừng tick.|
 |rtl/register_file.v|L25: REG_FIFO=12'h014|Thêm 0x18 SHADOW, 0x1C ACTIVE, 0x20 CONTROL_STATUS. Thêm baud_safe và APPLY; chỉ đổi ACTIVE khi TX_DONE, RX an toàn và divider khác 0. Ghi byte lane 0/1 vào SHADOW.|
 |rtl/register_file.v|L42: wire [2:0] int_status|Thêm INT_ENABLE 0x24, INT_STATUS 0x28 và irq_o. Bit 0 RX có dữ liệu; bit 1 TX_DONE; bit 2 RX overrun. IRQ = OR(enable & status), reset tắt toàn bộ enable.|
 |rtl/dti_uart.v|L29: reg [4:0] rx_quiet_ticks|Thêm bộ đếm xác nhận RX idle 16 tick; nối baud_div và baud_apply giữa register_file và generator. Đưa IRQ ra top UART; parameter BAUDRATE giữ vai trò mặc định sau reset.|
@@ -67,7 +67,7 @@ Bảng này tóm tắt các nhóm kiểm thử đã bổ sung hoặc điều ch�
 |tb/tb_niosv_firmware.sv; sim/run_tests.sh|Giám sát CPU thật; danh sách regression|Cho phép trap ngắt hợp lệ, kiểm tra có IRQ entry; payload chat dùng ASCII. Thêm hai test RTL mới; cập nhật các TB cũ cho cổng mới và địa chỉ không hợp lệ.|
 |docs/BAUD_INTERRUPT.md; firmware/VALIDATION.md; README và tài liệu tích hợp|Hướng dẫn sử dụng / kết quả đã ghi nhận|Ghi register map, quy trình đổi baud, chính sách ISR và kết quả. Tài liệu tóm tắt này không chạy lại các kiểm thử.|
 
-Đã ghi nhận: RTL 15/15 PASS; C/ISR và C+RTL PASS; ELF build PASS; Quartus timing +0,138 ns.
+Đã ghi nhận: RTL 15/15 PASS; C/ISR và C+RTL PASS; ELF build PASS; Quartus timing +0,148 ns.
 Questa compile-only PASS; chạy CPU bị chặn socket. SOF còn Simulation-Only trong môi trường công cụ; chưa xác nhận bản mới trên kit.
 
 

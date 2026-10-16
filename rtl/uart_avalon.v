@@ -28,7 +28,7 @@ module uart_avalon #(
         .psel(psel), .penable(penable), .pwrite(pwrite), .paddr(paddr),
         .pwdata(pwdata), .pstrb(pstrb), .pready(pready), .pslverr(pslverr), .prdata(prdata)
     );
-    dti_uart #(.CLK_FREQ(CLK_FREQ), .BAUDRATE(BAUDRATE)) uart (
+    apb_uart #(.CLK_FREQ(CLK_FREQ), .BAUDRATE(BAUDRATE)) uart (
         .clk(clk), .pclk(clk), .reset_n(reset_n), .presetn(reset_n),
         .psel(psel), .penable(penable), .pwrite(pwrite), .paddr(paddr),
         .pwdata(pwdata), .pstrb(pstrb), .pready(pready), .pslverr(pslverr),

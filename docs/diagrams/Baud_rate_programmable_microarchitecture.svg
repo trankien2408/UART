@@ -10,7 +10,7 @@
 <tspan x="65" dy="0">BAUD RATE GENERATOR — MICROARCHITECTURE</tspan>
 </text>
 <text x="65" y="88" font-size="21" fill="#52687c" text-anchor="start" font-weight="normal">
-<tspan x="65" dy="0">Một bộ đếm 16 bit • divider lập trình được • tick ×16 dùng chung TX và RX</tspan>
+<tspan x="65" dy="0">Một bộ đếm 16 bit • divider lập trình được • hai output tick_tx / tick_rx cùng nhịp ×16</tspan>
 </text>
 <rect x="225" y="135" width="1275" height="885" rx="24" fill="#f8fbff" stroke="#8aa3b8" stroke-width="2"/>
 <text x="255" y="175" font-size="21" fill="#172b43" text-anchor="start" font-weight="bold">
@@ -91,14 +91,14 @@
 <text x="1189" y="246" font-size="16" fill="#16718a" text-anchor="start" font-weight="normal">
 <tspan x="1189" dy="0">tick_D</tspan>
 </text>
-<polyline points="1410,270 1535,270 1535,235 1585,235" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
-<circle cx="1535" cy="270" r="4" fill="#243d53"/>
-<polyline points="1535,270 1535,345 1585,345" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
-<text x="1430" y="245" font-size="20" fill="#172b43" text-anchor="start" font-weight="bold">
-<tspan x="1430" dy="0">baud_tick</tspan>
+<polyline points="1410,270 1450,270 1450,235 1585,235" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="1450" cy="270" r="4" fill="#243d53"/>
+<polyline points="1450,270 1450,345 1585,345" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="1506" y="219" font-size="20" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="1506" dy="0">tick_tx</tspan>
 </text>
-<text x="1440" y="297" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
-<tspan x="1440" dy="0">1 bit</tspan>
+<text x="1506" y="329" font-size="20" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="1506" dy="0">tick_rx</tspan>
 </text>
 <polyline points="65,920 1240,920" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round"/>
 <text x="65" y="900" font-size="21" fill="#c34848" text-anchor="start" font-weight="bold">
@@ -207,7 +207,7 @@
 <tspan x="1382" dy="0">Q</tspan>
 </text>
 <text x="1335" y="307" font-size="18" fill="#172b43" text-anchor="middle" font-weight="normal">
-<tspan x="1335" dy="0">baud_tick</tspan>
+<tspan x="1335" dy="0">tick_tx</tspan>
 </text>
 <path d="M1260,315 L1275,325 L1260,335" fill="none" stroke="#c34848" stroke-width="2"/>
 <text x="1283" y="332" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
@@ -233,6 +233,9 @@
 </text>
 <text x="1585" y="414" font-size="16" fill="#52687c" text-anchor="start" font-weight="normal">
 <tspan x="1585" dy="0">Nằm ngoài module</tspan>
+</text>
+<text x="1510" y="465" font-size="18" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="1510" dy="0">tick_rx = tick_tx</tspan>
 </text>
 <text x="65" y="1060" font-size="20" fill="#172b43" text-anchor="start" font-weight="bold">
 <tspan x="65" dy="0">Ưu tiên: !rst_n (reset bất đồng bộ) → flush → terminal → đếm tăng.</tspan>

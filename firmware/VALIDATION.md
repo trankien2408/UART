@@ -1,3 +1,17 @@
+# Generator xuất tick_tx và tick_rx — 16/10/2026
+
+- Bỏ cổng baud_tick; generator xuất riêng tick_tx và tick_rx, dti_uart nối
+  trực tiếp tới TX/RX tương ứng. Bộ đếm xác nhận RX idle dùng tick_rx.
+- Một divider/pha được giữ chung: tick_tx là register, tick_rx nối cùng giá trị.
+  Không có divider hoặc baud độc lập giữa TX và RX trong phiên bản này.
+- RTL 15/15 PASS. Test divider kiểm tra cả hai output ở mỗi chu kỳ, reset và reload.
+- C chat + RTL PASS 538 byte, có ISR và lệnh đổi baud; Questa toàn SoC compile-only PASS.
+- Quartus compile/timing PASS, worst constrained slack +0,148 ns. Vẫn có cảnh báo
+  IP Simulation-Only trong môi trường công cụ, chưa hardware-ready và chưa thử kit.
+- C firmware không đổi trong lượt thay giao diện này; dùng ELF đã build ở lượt dọn code.
+
+---
+
 # Dọn code sau baud động + interrupt — 16/10/2026
 
 - Bỏ parameter không dùng CLK_FREQ/BAUD_RATE/OVERSAMPLE ở baud_rate_gen;

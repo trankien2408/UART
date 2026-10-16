@@ -40,7 +40,7 @@ def row(path, needle, change, new=False):
     return [path+(' [MỚI]' if new else ''),ref(path,needle),change]
 pages=[
 ('1. Thay đổi phần cứng RTL', 'Baud được ghi lúc chạy; IRQ được tạo từ trạng thái UART và đưa ra component.',[
-row('rtl/baud_rate_gen.v','input wire [15:0] divider_i','Thêm divider_i 16 bit và reload_i; bộ đếm 16 bit tạo tick ×16 theo divider hiện tại. Khi APPLY: reset bộ đếm/tick; divider 0 dừng tick.'),
+row('rtl/baud_rate_gen.v','input wire [15:0] divider_i','Thêm divider_i 16 bit và reload_i; bộ đếm 16 bit xuất tick_tx và tick_rx cùng nhịp ×16 theo divider hiện tại. Khi APPLY: reset bộ đếm/tick; divider 0 dừng tick.'),
 row('rtl/register_file.v',"REG_FIFO=12'h014",'Thêm 0x18 SHADOW, 0x1C ACTIVE, 0x20 CONTROL_STATUS. Thêm baud_safe và APPLY; chỉ đổi ACTIVE khi TX_DONE, RX an toàn và divider khác 0. Ghi byte lane 0/1 vào SHADOW.'),
 row('rtl/register_file.v','wire [2:0] int_status','Thêm INT_ENABLE 0x24, INT_STATUS 0x28 và irq_o. Bit 0 RX có dữ liệu; bit 1 TX_DONE; bit 2 RX overrun. IRQ = OR(enable & status), reset tắt toàn bộ enable.'),
 row('rtl/dti_uart.v','reg [4:0] rx_quiet_ticks','Thêm bộ đếm xác nhận RX idle 16 tick; nối baud_div và baud_apply giữa register_file và generator. Đưa IRQ ra top UART; parameter BAUDRATE giữ vai trò mặc định sau reset.'),
@@ -70,7 +70,7 @@ row('tb/tb_baud_irq.sv','module tb_baud_irq','File mới: serial nhiều baud, A
 ['tb/firmware_cosim.c; tb_firmware_cosim.sv; tb_firmware_echo_cosim.sv','Co-simulation C + RTL; các script run_firmware_*cosim.sh','Driver + RTL: 768 frame, đổi baud bằng API. Chat + RTL: 538 byte, IRQ RTL được model host gọi ISR C; đổi 9600 → 115200, từ chối 230400.'],
 ['tb/tb_niosv_firmware.sv; sim/run_tests.sh','Giám sát CPU thật; danh sách regression','Cho phép trap ngắt hợp lệ, kiểm tra có IRQ entry; payload chat dùng ASCII. Thêm hai test RTL mới; cập nhật các TB cũ cho cổng mới và địa chỉ không hợp lệ.'],
 ['docs/BAUD_INTERRUPT.md; firmware/VALIDATION.md; README và tài liệu tích hợp','Hướng dẫn sử dụng / kết quả đã ghi nhận','Ghi register map, quy trình đổi baud, chính sách ISR và kết quả. Tài liệu tóm tắt này không chạy lại các kiểm thử.']
-], 'Đã ghi nhận: RTL 15/15 PASS; C/ISR và C+RTL PASS; ELF build PASS; Quartus timing +0,138 ns.\nQuesta compile-only PASS; chạy CPU bị chặn socket. SOF còn Simulation-Only trong môi trường công cụ; chưa xác nhận bản mới trên kit.')
+], 'Đã ghi nhận: RTL 15/15 PASS; C/ISR và C+RTL PASS; ELF build PASS; Quartus timing +0,148 ns.\nQuesta compile-only PASS; chạy CPU bị chặn socket. SOF còn Simulation-Only trong môi trường công cụ; chưa xác nhận bản mới trên kit.')
 ]
 
 W,H=842,595

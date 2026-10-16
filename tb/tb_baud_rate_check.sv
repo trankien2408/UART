@@ -3,10 +3,10 @@ module baud_case #(parameter integer RATE=115200) (
     input wire clk, rst_n, output reg done=0
 );
     localparam integer DIV=50000000/(RATE*16);
-    wire tick;
+    wire tick, tick_rx;
     integer count,last_tick,ticks;
     baud_rate_gen dut(
-        .clk(clk),.rst_n(rst_n),.divider_i(16'(DIV)),.reload_i(1'b0),.baud_tick(tick)
+        .clk(clk),.rst_n(rst_n),.divider_i(16'(DIV)),.reload_i(1'b0),.tick_tx(tick),.tick_rx(tick_rx)
     );
     initial begin
         wait(rst_n===1);
@@ -14,6 +14,7 @@ module baud_case #(parameter integer RATE=115200) (
         for (count=1;count<=DIV*34;count++) begin
             @(posedge clk);#1;
             if (tick!==((count%DIV)==0)) $fatal(1,"baud %0d incorrect tick at cycle %0d",RATE,count);
+            if (tick_rx!==tick) $fatal(1,"baud %0d TX/RX output mismatch",RATE);
             if (tick) begin
                 if ((count-last_tick)!=DIV) $fatal(1,"baud %0d interval",RATE);
                 last_tick=count;ticks++;
@@ -24,7 +25,7 @@ module baud_case #(parameter integer RATE=115200) (
         done=1;
     end
     always @(negedge rst_n) begin
-        #1;if(tick!==0) $fatal(1,"baud %0d async reset",RATE);
+        #1;if({tick,tick_rx}!==2'b00) $fatal(1,"baud %0d async reset",RATE);
     end
 endmodule
 module tb_baud_rate_check;
