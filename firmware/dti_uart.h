@@ -15,7 +15,8 @@ enum {
 enum dti_parity { DTI_PARITY_NONE, DTI_PARITY_ODD, DTI_PARITY_EVEN };
 enum dti_result { DTI_OK=0, DTI_AGAIN=1, DTI_TIMEOUT=-1, DTI_INVALID=-2, DTI_PARITY=-3 };
 typedef struct { uintptr_t base; uint32_t timeout_cycles; } dti_uart;
-// Single owner only: ISR/second task must not access these registers concurrently.
+// With the IRQ driver, only ISR pops RX and only main enqueues TX.
+// Protect shared control-register updates against ISR/task interleaving.
 // Timeout must be in (0, 2^31); timeout never cancels an already queued TX.
 int dti_init(dti_uart *dev, uintptr_t base, uint32_t timeout_cycles);
 uint32_t dti_status(const dti_uart *dev);

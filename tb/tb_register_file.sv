@@ -7,7 +7,7 @@ module tb_register_file;
     reg [11:0] paddr_i=0;
     reg [31:0] pwdata_i=0, rx_data_i=0;
     reg tx_busy_i=0, tx_done_i=0, rx_done_i=0, parity_error_i=0;
-    wire read_en_o,write_en_o,error_o,start_tx_o,rx_pending_o,rx_full_o;
+    wire read_en_o,write_en_o,error_o,start_tx_o,rx_full_o;
     wire [31:0] prdata_o,tx_data_o;
     wire [1:0] data_bit_num_o;
     wire stop_bit_num_o,parity_en_o,parity_type_o;
@@ -81,7 +81,8 @@ module tb_register_file;
         @(negedge clk);rx_done_i=0;#1;check(read_en_o && prdata_o==8'h81,"arrival ready");
         @(negedge clk);access_i=0;rd(12'hc,1,0);
         wr(0,8'hab);wr(8,1);receive_byte(99,1);
-        #3;reset_n=0;#1;check(!start_tx_o && !rx_pending_o && tx_data_o==0,"reset flushes active and FIFOs");
+        paddr_i=12'h14;pwrite_i=0;
+        #3;reset_n=0;#1;check(!start_tx_o && !irq_o && tx_data_o==0 && prdata_o[3],"asynchronous reset clears TX/RX/IRQ");
         @(negedge clk);reset_n=1;rd(12'h14,10,0);rd(12'hc,1,0);
         $display("PASS tb_register_file checks=%0d",checks);$finish;
     end

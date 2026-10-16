@@ -5,7 +5,7 @@ module baud_case #(parameter integer RATE=115200) (
     localparam integer DIV=50000000/(RATE*16);
     wire tick;
     integer count,last_tick,ticks;
-    baud_rate_gen #(.CLK_FREQ(50000000),.BAUD_RATE(RATE),.OVERSAMPLE(16)) dut(
+    baud_rate_gen dut(
         .clk(clk),.rst_n(rst_n),.divider_i(16'(DIV)),.reload_i(1'b0),.baud_tick(tick)
     );
     initial begin

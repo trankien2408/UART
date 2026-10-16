@@ -212,3 +212,13 @@ python3 UART/firmware/serial_echo_test.py /dev/ttyUSB0 --baud 9600 --count 1024
 
 Chưa nạp/đo bản baud+IRQ trên kit trong lần triển khai này. Kết quả mô phỏng,
 cross-compile và timing không thay thế bước xác nhận vật lý.
+
+## Dọn code sau triển khai
+
+Đã bỏ ba parameter không dùng trong baud_rate_gen; module này chỉ nhận
+clk/rst_n/divider_i/reload_i. Giữ CLK_FREQ và BAUDRATE trong wrapper để chọn
+baud reset. Bỏ rx_pending_o cũ; RTS vẫn dựa trên FIFO full. Firmware bỏ hàm
+console_echo log hex cũ, gộp helper gửi một byte vào console_text và chỉ giữ
+uart_irq_stop ở phạm vi nội bộ ISR. Không thay đổi register map hoặc thuật toán
+baud/IRQ; polling API vẫn cần cho scope/self-test. Xem đầu VALIDATION.md cho
+kết quả kiểm tra sau dọn code.

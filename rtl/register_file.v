@@ -18,7 +18,7 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     input wire rx_baud_safe_i,
     output reg [15:0] baud_div_o,
     output wire baud_apply_o, irq_o,
-    output wire rx_pending_o, rx_full_o
+    output wire rx_full_o
 );
     localparam [11:0] REG_TX=12'h000, REG_CFG=12'h004,
         REG_CTRL=12'h008, REG_STT=12'h00c, REG_RX=12'h010,
@@ -67,7 +67,6 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     assign stop_bit_num_o = cfg_reg[2];
     assign parity_en_o = cfg_reg[3];
     assign parity_type_o = cfg_reg[4];
-    assign rx_pending_o = !rx_empty;
     always @* begin
         error_o = !known_addr || (pwrite_i && ((paddr_i==REG_STT)||(paddr_i==REG_RX)||(paddr_i==REG_BAUD_ACTIVE)||(paddr_i==REG_INT_ST)));
         read_en_o=1; write_en_o=1; prdata_o=0;

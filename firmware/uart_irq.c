@@ -16,7 +16,7 @@ int uart_irq_init(const dti_uart *dev)
     uart_mmio_write(dev->base+DTI_INT_ENABLE,DTI_IRQ_RX|DTI_IRQ_OVERRUN);
     return DTI_OK;
 }
-void uart_irq_stop(void)
+static void uart_irq_stop(void)
 {
     uart_mmio_write(device->base+DTI_INT_ENABLE,0);
 }

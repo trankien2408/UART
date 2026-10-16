@@ -1,0 +1,246 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1150" viewBox="0 0 1800 1150">
+<defs>
+<marker id="data" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#243d53"/></marker>
+<marker id="control" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#16718a"/></marker>
+<marker id="clock" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#c34848"/></marker>
+<marker id="reset" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#8056a5"/></marker>
+</defs><g font-family="Noto Sans, DejaVu Sans, sans-serif">
+<rect x="0" y="0" width="1800" height="1150" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+<text x="65" y="52" font-size="30" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">BAUD RATE GENERATOR — MICROARCHITECTURE</tspan>
+</text>
+<text x="65" y="88" font-size="21" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">Một bộ đếm 16 bit • divider lập trình được • tick ×16 dùng chung TX và RX</tspan>
+</text>
+<rect x="225" y="135" width="1275" height="885" rx="24" fill="#f8fbff" stroke="#8aa3b8" stroke-width="2"/>
+<text x="255" y="175" font-size="21" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="255" dy="0">baud_rate_gen  |  đúng theo RTL hiện tại</tspan>
+</text>
+<text x="255" y="199" font-size="14" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="255" dy="0">Chấm tròn: điểm nối. Giao cắt không chấm: không nối.</tspan>
+</text>
+<polyline points="65,270 305,270" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="260" cy="270" r="4" fill="#243d53"/>
+<polyline points="260,270 260,435 305,435" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="65" y="245" font-size="21" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">divider_i[15:0]</tspan>
+</text>
+<polyline points="269,280 281,260" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="285" y="258" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="285" dy="0">16</tspan>
+</text>
+<polyline points="485,270 580,270" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="524,280 536,260" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="540" y="258" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="540" dy="0">16</tspan>
+</text>
+<text x="495" y="244" font-size="16" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="495" dy="0">threshold</tspan>
+</text>
+<polyline points="810,270 1040,270" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<circle cx="900" cy="270" r="4" fill="#16718a"/>
+<text x="830" y="245" font-size="18" fill="#16718a" text-anchor="start" font-weight="bold">
+<tspan x="830" dy="0">terminal</tspan>
+</text>
+<polyline points="900,270 900,520 650,520 650,540" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<polyline points="485,435 565,435" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<polyline points="65,495 530,495 530,465 565,465" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="65" y="473" font-size="21" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">reload_i</tspan>
+</text>
+<polyline points="735,445 1110,445 1110,325" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<circle cx="940" cy="445" r="4" fill="#16718a"/>
+<text x="760" y="427" font-size="18" fill="#16718a" text-anchor="start" font-weight="bold">
+<tspan x="760" dy="0">flush</tspan>
+</text>
+<polyline points="940,445 940,495 550,495 550,575 610,575" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<polyline points="1220,690 1250,690 1250,360 695,360 695,315" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="1250" cy="690" r="4" fill="#243d53"/>
+<text x="708" y="387" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="708" dy="0">counter[15:0]</tspan>
+</text>
+<polyline points="1250,690 1250,830 505,830 505,720" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="900" y="812" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="900" dy="0">counter[15:0] — feedback</tspan>
+</text>
+<polyline points="570,680 660,680 660,665 770,665" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="697,675 709,655" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="713" y="653" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="713" dy="0">16</tspan>
+</text>
+<text x="586" y="650" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="586" dy="0">counter + 16’d1</tspan>
+</text>
+<polyline points="670,730 770,730" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="660" y="758" font-size="18" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="660" dy="0">16’d0</tspan>
+</text>
+<polyline points="885,690 1040,690" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<polyline points="929,700 941,680" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="945" y="678" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="945" dy="0">16</tspan>
+</text>
+<text x="910" y="665" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="910" dy="0">counter_D</tspan>
+</text>
+<polyline points="760,570 827,570 827,637" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="779" y="554" font-size="16" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="779" dy="0">clear_count</tspan>
+</text>
+<polyline points="1180,270 1260,270" fill="none" stroke="#16718a" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#control)"/>
+<text x="1189" y="246" font-size="16" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="1189" dy="0">tick_D</tspan>
+</text>
+<polyline points="1410,270 1535,270 1535,235 1585,235" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<circle cx="1535" cy="270" r="4" fill="#243d53"/>
+<polyline points="1535,270 1535,345 1585,345" fill="none" stroke="#243d53" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#data)"/>
+<text x="1430" y="245" font-size="20" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="1430" dy="0">baud_tick</tspan>
+</text>
+<text x="1440" y="297" font-size="15" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1440" dy="0">1 bit</tspan>
+</text>
+<polyline points="65,920 1240,920" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="65" y="900" font-size="21" fill="#c34848" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">clk</tspan>
+</text>
+<circle cx="1000" cy="920" r="4" fill="#c34848"/>
+<polyline points="1000,920 1000,735 1040,735" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#clock)"/>
+<polyline points="1240,920 1240,325 1260,325" fill="none" stroke="#c34848" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#clock)"/>
+<polyline points="65,980 1370,980 1370,359" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="65" y="960" font-size="21" fill="#8056a5" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">rst_n</tspan>
+</text>
+<circle cx="1160" cy="980" r="4" fill="#8056a5"/>
+<polyline points="1160,980 1160,779" fill="none" stroke="#8056a5" stroke-width="2.5" stroke-linejoin="round"/>
+<rect x="305" y="230" width="180" height="80" rx="0" fill="#e0eef8" stroke="#577084" stroke-width="2"/>
+<text x="395" y="261" font-size="18" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="395" dy="0">SUBTRACT 1</tspan>
+</text>
+<text x="395" y="291" font-size="17" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="395" dy="0">divider_i − 16’d1</tspan>
+</text>
+<rect x="580" y="225" width="230" height="90" rx="12" fill="#ddefdf" stroke="#7aa577" stroke-width="2"/>
+<text x="695" y="261" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="695" dy="0">UNSIGNED ≥</tspan>
+</text>
+<text x="695" y="289" font-size="17" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="695" dy="0">counter ≥ threshold</tspan>
+</text>
+<rect x="305" y="400" width="180" height="70" rx="12" fill="#ddefdf" stroke="#7aa577" stroke-width="2"/>
+<text x="395" y="430" font-size="19" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="395" dy="0">divider_i == 0</tspan>
+</text>
+<text x="395" y="453" font-size="16" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="395" dy="0">invalid</tspan>
+</text>
+<rect x="565" y="405" width="170" height="80" rx="12" fill="#ddefdf" stroke="#7aa577" stroke-width="2"/>
+<text x="650" y="437" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="650" dy="0">OR</tspan>
+</text>
+<text x="650" y="463" font-size="16" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="650" dy="0">reload | invalid</tspan>
+</text>
+<rect x="610" y="540" width="150" height="62" rx="12" fill="#ddefdf" stroke="#7aa577" stroke-width="2"/>
+<text x="685" y="568" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="685" dy="0">OR</tspan>
+</text>
+<text x="685" y="589" font-size="15" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="685" dy="0">flush | terminal</tspan>
+</text>
+<rect x="1040" y="225" width="140" height="100" rx="12" fill="#ddefdf" stroke="#7aa577" stroke-width="2"/>
+<text x="1110" y="257" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1110" dy="0">AND</tspan>
+</text>
+<text x="1110" y="285" font-size="16" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1110" dy="0">terminal</tspan>
+</text>
+<text x="1110" y="307" font-size="16" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1110" dy="0">&amp; !flush</tspan>
+</text>
+<rect x="440" y="645" width="130" height="75" rx="12" fill="#ddefdf" stroke="#7aa577" stroke-width="2"/>
+<text x="505" y="692" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="505" dy="0">+ 16’d1</tspan>
+</text>
+<polygon points="770,620 885,655 885,725 770,770" fill="#f7d9d5" stroke="#c67469" stroke-width="2"/>
+<text x="789" y="672" font-size="19" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="789" dy="0">0</tspan>
+</text>
+<text x="789" y="737" font-size="19" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="789" dy="0">1</tspan>
+</text>
+<text x="823" y="703" font-size="17" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="823" dy="0">MUX</tspan>
+</text>
+<text x="843" y="611" font-size="16" fill="#16718a" text-anchor="start" font-weight="normal">
+<tspan x="843" dy="0">S</tspan>
+</text>
+<rect x="1040" y="620" width="180" height="155" rx="0" fill="#e5ddf1" stroke="#9475b2" stroke-width="2"/>
+<text x="1130" y="655" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1130" dy="0">COUNTER</tspan>
+</text>
+<text x="1130" y="683" font-size="18" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1130" dy="0">16-bit register</tspan>
+</text>
+<text x="1050" y="714" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1050" dy="0">D</tspan>
+</text>
+<text x="1192" y="714" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1192" dy="0">Q</tspan>
+</text>
+<path d="M1040,725 L1055,735 L1040,745" fill="none" stroke="#c34848" stroke-width="2"/>
+<text x="1065" y="741" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
+<tspan x="1065" dy="0">clk</tspan>
+</text>
+<circle cx="1160" cy="779" r="4" fill="white" stroke="#8056a5" stroke-width="2"/>
+<text x="1097" y="763" font-size="15" fill="#8056a5" text-anchor="start" font-weight="normal">
+<tspan x="1097" dy="0">CLR_n</tspan>
+</text>
+<rect x="1260" y="220" width="150" height="135" rx="0" fill="#fff0c6" stroke="#bd9a3b" stroke-width="2"/>
+<text x="1335" y="249" font-size="17" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1335" dy="0">D FLIP-FLOP</tspan>
+</text>
+<text x="1270" y="284" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1270" dy="0">D</tspan>
+</text>
+<text x="1382" y="284" font-size="17" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1382" dy="0">Q</tspan>
+</text>
+<text x="1335" y="307" font-size="18" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1335" dy="0">baud_tick</tspan>
+</text>
+<path d="M1260,315 L1275,325 L1260,335" fill="none" stroke="#c34848" stroke-width="2"/>
+<text x="1283" y="332" font-size="15" fill="#c34848" text-anchor="start" font-weight="normal">
+<tspan x="1283" dy="0">clk</tspan>
+</text>
+<circle cx="1370" cy="359" r="4" fill="white" stroke="#8056a5" stroke-width="2"/>
+<text x="1303" y="347" font-size="14" fill="#8056a5" text-anchor="start" font-weight="normal">
+<tspan x="1303" dy="0">CLR_n</tspan>
+</text>
+<rect x="1585" y="200" width="160" height="75" rx="12" fill="#e0eef8" stroke="#577084" stroke-width="2"/>
+<text x="1665" y="231" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1665" dy="0">TX core</tspan>
+</text>
+<text x="1665" y="257" font-size="17" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1665" dy="0">tick_tx</tspan>
+</text>
+<rect x="1585" y="310" width="160" height="75" rx="12" fill="#e0eef8" stroke="#577084" stroke-width="2"/>
+<text x="1665" y="341" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1665" dy="0">RX core</tspan>
+</text>
+<text x="1665" y="367" font-size="17" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1665" dy="0">tick_rx</tspan>
+</text>
+<text x="1585" y="414" font-size="16" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="1585" dy="0">Nằm ngoài module</tspan>
+</text>
+<text x="65" y="1060" font-size="20" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="65" dy="0">Ưu tiên: !rst_n (reset bất đồng bộ) → flush → terminal → đếm tăng.</tspan>
+</text>
+<text x="65" y="1093" font-size="18" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">divider_i ← BAUD_DIV_ACTIVE; reload_i ← baud_apply. Điều kiện đổi baud an toàn được kiểm tra bên ngoài module.</tspan>
+</text>
+<text x="65" y="1125" font-size="16" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="65" dy="0">Nguồn: UART/rtl/baud_rate_gen.v và UART/rtl/dti_uart.v. Tick là clock-enable; divider = 1 cho tick liên tục mỗi clock.</tspan>
+</text>
+</g></svg>

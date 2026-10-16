@@ -16,11 +16,6 @@ void console_init(void)
     uart_mmio_write(JTAG_UART_BASE + JTAG_CONTROL, 0); // Tat interrupt.
 }
 
-void console_send_byte(uint8_t byte)
-{
-    (void)console_write(&byte, 1u);
-}
-
 int console_write(const uint8_t *data, unsigned length)
 {
     if (length > TX_BUF_SIZE - tx_count) return -1;
@@ -35,17 +30,9 @@ int console_write(const uint8_t *data, unsigned length)
 void console_text(const char *text)
 {
     while (*text) {
-        console_send_byte((uint8_t)*text++);
+        uint8_t byte = (uint8_t)*text++;
+        (void)console_write(&byte, 1u);
     }
-}
-
-void console_echo(uint8_t byte)
-{
-    const char hex[] = "0123456789ABCDEF";
-    char line[] = "RX=0x00 TX=0x00\r\n";
-    line[5] = line[13] = hex[byte >> 4];
-    line[6] = line[14] = hex[byte & 15u];
-    console_text(line);
 }
 
 int console_try_receive(uint8_t *byte)

@@ -23,7 +23,7 @@ module dti_uart #(
     wire [7:0] rx_data;
     wire [1:0] data_bits;
     wire stop_bits, parity_en, parity_type, start_tx;
-    wire tx_busy, tx_done, rx_done, parity_error, rx_pending, rx_full, core_rts_n;
+    wire tx_busy, tx_done, rx_done, parity_error, rx_full, core_rts_n;
     wire [15:0] baud_div;
     wire baud_apply, rx_idle;
     reg [4:0] rx_quiet_ticks;
@@ -33,7 +33,6 @@ module dti_uart #(
         else if (baud_apply || !rx_idle) rx_quiet_ticks<=0;
         else if (baud_tick && rx_quiet_ticks<16) rx_quiet_ticks<=rx_quiet_ticks+1'b1;
     end
-    wire frame_error; // Invalid stop-bit frames are discarded by the RX core.
 
     // CTS is asynchronous to the FPGA clock. Fail closed while reset is active.
     reg cts_meta, cts_sync;
@@ -66,10 +65,12 @@ module dti_uart #(
         .tx_busy_i(tx_busy), .tx_done_i(tx_done), .rx_done_i(rx_done),
         .parity_error_i(parity_error), .rx_data_i({24'd0, rx_data}),
         .rx_baud_safe_i(rx_baud_safe), .baud_div_o(baud_div),
-        .baud_apply_o(baud_apply), .irq_o(irq), .rx_pending_o(rx_pending), .rx_full_o(rx_full)
+        .baud_apply_o(baud_apply), .irq_o(irq), .rx_full_o(rx_full)
     );
-    baud_rate_gen #(.CLK_FREQ(CLK_FREQ), .BAUD_RATE(BAUDRATE), .OVERSAMPLE(16))
-        u_baud (.clk(clk), .rst_n(rst_n), .divider_i(baud_div), .reload_i(baud_apply), .baud_tick(baud_tick));
+    baud_rate_gen u_baud (
+        .clk(clk), .rst_n(rst_n), .divider_i(baud_div),
+        .reload_i(baud_apply), .baud_tick(baud_tick)
+    );
     tx_topmodule u_tx (
         .clk(clk), .reset_n(rst_n), .tick_tx(baud_tick), .tx_data_i(tx_data[7:0]),
         .data_bit_num_i(data_bits), .stop_bit_num_i({1'b0, stop_bits}),
@@ -82,6 +83,7 @@ module dti_uart #(
         .data_bit_num_i(data_bits), .stop_bit_num_i({1'b0, stop_bits}),
         .parity_en_i(parity_en), .parity_type_i(parity_type),
         .rx_data_o(rx_data), .rx_done_o(rx_done), .parity_error_o(parity_error),
-        .frame_error_o(frame_error), .rts_n(core_rts_n), .baud_idle_o(rx_idle)
+        // Invalid stop-bit frames are discarded inside the RX core.
+        .frame_error_o(), .rts_n(core_rts_n), .baud_idle_o(rx_idle)
     );
 endmodule

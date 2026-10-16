@@ -1,3 +1,27 @@
+# Dọn code sau baud động + interrupt — 16/10/2026
+
+- Bỏ parameter không dùng CLK_FREQ/BAUD_RATE/OVERSAMPLE ở baud_rate_gen;
+  cập nhật instantiate ở dti_uart và testbench divider. Giữ CLK_FREQ/BAUDRATE
+  ở wrapper để tính divider mặc định sau reset.
+- Bỏ rx_pending_o và dây tương ứng; RTS hiện dựa trên RX FIFO full.
+  Bỏ wire frame_error không có consumer ở top, để cổng RX debug mở rõ ràng;
+  logic loại frame sai stop vẫn nằm nguyên trong RX core.
+- Bỏ console_echo log hex cũ không được gọi; gộp console_send_byte vào
+  console_text; uart_irq_stop thành helper static, bỏ khai báo API công khai.
+- RTL regression 15/15 PASS; bài reset register_file kiểm tra RX_EMPTY qua
+  thanh ghi FIFO_STATUS sau khi bỏ cổng rx_pending_o.
+- Kiểm thử C driver/chat/ISR PASS; C chat + RTL PASS 538 byte với IRQ và lệnh
+  đổi baud. Không chạy lại bài driver + RTL 768 frame trong lượt dọn này vì
+  thuật toán driver không đổi; kết quả lịch sử của lượt triển khai ở bên dưới.
+- ELF echo/selftest/scope build PASS; echo text/data/bss = 23196/1844/3356 byte.
+- Questa compile toàn SoC PASS (compile-only, chưa thực thi CPU).
+- Platform Designer + Quartus compile/timing PASS, worst slack +0,138 ns.
+  Warning Simulation-Only vẫn còn trong môi trường công cụ, chưa có marker
+  hardware-ready. Cần compile ở terminal thường có license hợp lệ trước nạp.
+- Chưa nạp/đo trên kit trong lượt dọn code này.
+
+---
+
 # Baud động + interrupt — 16/10/2026
 
 - RTL regression: **15/15 PASS**. Giữ toàn bộ kiểm thử FIFO/frame/baud cũ;

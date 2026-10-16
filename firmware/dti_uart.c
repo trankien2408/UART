@@ -22,7 +22,7 @@ int dti_wait_tx(const dti_uart *dev)
 }
 int dti_configure(const dti_uart *dev, unsigned bits, unsigned stops, enum dti_parity parity)
 {
-    // CFG chi chon dinh dang frame; baud rate la parameter cua RTL.
+    // CFG selects frame format; runtime baud uses SHADOW/APPLY separately.
     if (bits<5 || bits>8 || stops<1 || stops>2 ||
         (parity!=DTI_PARITY_NONE && parity!=DTI_PARITY_ODD && parity!=DTI_PARITY_EVEN))
         return DTI_INVALID;
