@@ -13,7 +13,7 @@ iverilog-vpi --name=firmware_cosim -DUART_HOST_TEST -DUART_DEMO_TEST -DUART_ECHO
     > "$result_dir/compile_c.log" 2>&1
 cd "$sim_dir"
 iverilog -g2012 -Wall -s tb_firmware_echo_cosim -o "$build_dir/test.vvp" -f rtl.f \
-    ../rtl/avalon_apb_bridge.v ../rtl/uart_avalon.v ../tb/tb_firmware_echo_cosim.sv \
+    ../rtl/avalon_apb_bridge.v ../rtl/uart_avalon.v ../tb/tb_firmware_echo_cosim.v \
     > "$result_dir/compile_rtl.log" 2>&1
 timeout 180 vvp -M "$build_dir" -m firmware_cosim "$build_dir/test.vvp" \
     > "$result_dir/run.log" 2>&1

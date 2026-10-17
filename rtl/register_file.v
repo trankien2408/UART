@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-// Register map follows 7up_uart.drawio.pdf. All addresses are BYTE offsets.
-// read_en_o/write_en_o mean READY, not a write strobe. access_i qualifies commit.
 module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     input wire clk, reset_n,
     input wire access_i, pwrite_i,
@@ -14,6 +12,7 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     output wire stop_bit_num_o, parity_en_o, parity_type_o,
     output reg start_tx_o,
     input wire tx_busy_i, tx_done_i, rx_done_i, parity_error_i,
+    input wire rx_frame_error_i,
     input wire [31:0] rx_data_i,
     input wire rx_baud_safe_i,
     output reg [15:0] baud_div_o,
@@ -28,10 +27,10 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     reg [1:0] tx_state;
     reg [7:0] tx_data_reg, tx_active, rx_last;
     reg [4:0] cfg_reg;
-    reg rx_overrun;
+    reg rx_overrun, rx_frame_error;
     reg [15:0] baud_shadow;
     reg baud_rejected;
-    reg [2:0] int_enable;
+    reg [3:0] int_enable;
     wire tx_full, tx_empty, rx_empty;
     wire [$clog2(FIFO_DEPTH+1)-1:0] tx_count, rx_count;
     wire [7:0] tx_head;
@@ -39,7 +38,7 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     wire tx_done = tx_empty && (tx_state==IDLE) && !tx_busy_i;
     wire rx_done = !rx_empty;
     wire parity_error = !rx_empty && rx_head[8];
-    wire [2:0] int_status = {rx_overrun, tx_done, rx_done};
+    wire [3:0] int_status = {rx_frame_error, rx_overrun, tx_done, rx_done};
     wire baud_safe = tx_done && rx_baud_safe_i;
     assign irq_o = reset_n && (|(int_enable & int_status));
     wire known_addr = (paddr_i==REG_TX)||(paddr_i==REG_CFG)||
@@ -72,7 +71,6 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
         read_en_o=1; write_en_o=1; prdata_o=0;
         case (paddr_i)
             REG_TX: prdata_o={24'd0,tx_data_reg};
-            // A queued frame must keep its original format until drained.
             REG_CFG: begin
                 prdata_o={27'd0,cfg_reg};
                 if (pstrb_i[0]) write_en_o=tx_done;
@@ -93,12 +91,13 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
                 prdata_o[1]=baud_rejected;
                 prdata_o[3]=(baud_shadow!=baud_div_o);
             end
-            REG_INT_EN: prdata_o={29'd0,int_enable};
-            REG_INT_ST: prdata_o={29'd0,int_status};
+            REG_INT_EN: prdata_o={28'd0,int_enable};
+            REG_INT_ST: prdata_o={28'd0,int_status};
             REG_FIFO: begin
                 prdata_o[0]=tx_full; prdata_o[1]=tx_empty;
                 prdata_o[2]=rx_full_o; prdata_o[3]=rx_empty;
                 prdata_o[4]=rx_overrun;
+                prdata_o[5]=rx_frame_error;
                 prdata_o[15:8]=tx_count; prdata_o[23:16]=rx_count;
             end
             default: begin end
@@ -107,7 +106,7 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
             tx_data_reg<=0; tx_active<=0; rx_last<=0; cfg_reg<=0;
-            tx_state<=IDLE; start_tx_o<=0; rx_overrun<=0;
+            tx_state<=IDLE; start_tx_o<=0; rx_overrun<=0; rx_frame_error<=0;
             baud_shadow<=DEFAULT_DIV[15:0]; baud_div_o<=DEFAULT_DIV[15:0];
             baud_rejected<=0; int_enable<=0;
         end else begin
@@ -129,9 +128,12 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
                 case (paddr_i)
                     REG_TX: tx_data_reg<=pwdata_i[7:0];
                     REG_CFG: cfg_reg<=pwdata_i[4:0];
-                    REG_INT_EN: int_enable<=pwdata_i[2:0];
+                    REG_INT_EN: int_enable<=pwdata_i[3:0];
                     REG_BAUD_CTRL: if (pwdata_i[1]) baud_rejected<=0;
-                    REG_FIFO: if (pwdata_i[4]) rx_overrun<=0;
+                    REG_FIFO: begin
+                        if (pwdata_i[4]) rx_overrun<=0;
+                        if (pwdata_i[5]) rx_frame_error<=0;
+                    end
                     default: begin end
                 endcase
             end
@@ -140,8 +142,8 @@ module register_file #(parameter FIFO_DEPTH=16, parameter DEFAULT_DIV=27) (
                 else baud_rejected<=1;
             end
             if (consume_rx) rx_last<=rx_head[7:0];
-            // New overflow wins over a simultaneous software acknowledgement.
             if (rx_done_i && rx_full_o && !consume_rx) rx_overrun<=1;
+            if (rx_frame_error_i) rx_frame_error<=1;
         end
     end
 endmodule

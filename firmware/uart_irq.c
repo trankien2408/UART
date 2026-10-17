@@ -5,15 +5,16 @@ static const dti_uart *device;
 static uint16_t received[RX_SIZE]; // bit 8 is parity, belonging to this byte
 static volatile unsigned head, tail;
 static volatile uint32_t faults;
+static volatile uint32_t rx_errors;
 static volatile int tx_complete;
 
 int uart_irq_init(const dti_uart *dev)
 {
     device=dev;
     uart_mmio_write(dev->base+DTI_INT_ENABLE,0);
-    head=tail=0; faults=0; tx_complete=0;
+    head=tail=0; faults=0; rx_errors=0; tx_complete=0;
     if (uart_irq_register(uart_irq_handler,0)!=0) return DTI_INVALID;
-    uart_mmio_write(dev->base+DTI_INT_ENABLE,DTI_IRQ_RX|DTI_IRQ_OVERRUN);
+    uart_mmio_write(dev->base+DTI_INT_ENABLE,DTI_IRQ_RX|DTI_IRQ_OVERRUN|DTI_IRQ_FRAME);
     return DTI_OK;
 }
 static void uart_irq_stop(void)
@@ -25,6 +26,10 @@ void uart_irq_handler(void *context)
     (void)context;
     uint32_t enabled=uart_mmio_read(device->base+DTI_INT_ENABLE);
     uint32_t pending=enabled & uart_mmio_read(device->base+DTI_INT_STATUS);
+    if (pending & DTI_IRQ_FRAME) {
+        rx_errors |= UART_RX_ERROR_FRAME;
+        dti_clear_frame_error(device);
+    }
     if (pending & DTI_IRQ_OVERRUN) {
         faults |= UART_FAULT_HW_OVERRUN;
         dti_clear_overrun(device);
@@ -65,6 +70,13 @@ int uart_irq_rx_empty(void)
     return empty;
 }
 uint32_t uart_irq_faults(void) { return faults; }
+uint32_t uart_irq_take_rx_errors(void)
+{
+    uint32_t state=uart_irq_lock();
+    uint32_t errors=rx_errors; rx_errors=0;
+    uart_irq_unlock(state);
+    return errors;
+}
 void uart_irq_tx_arm(void)
 {
     // Call AFTER enqueue. An already completed frame is still detected by level IRQ.

@@ -12,7 +12,7 @@ import sys
 sim, build = map(Path, sys.argv[1:])
 lines = ['set_global_assignment -name FAMILY "Cyclone IV E"',
          'set_global_assignment -name DEVICE EP4CE115F29C7',
-         'set_global_assignment -name TOP_LEVEL_ENTITY dti_uart',
+         'set_global_assignment -name TOP_LEVEL_ENTITY apb_uart',
          'set_global_assignment -name NUM_PARALLEL_PROCESSORS 2']
 for name in (sim/'rtl.f').read_text().splitlines():
     if name.strip():

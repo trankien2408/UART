@@ -7,6 +7,7 @@ module tb_register_file;
     reg [11:0] paddr_i=0;
     reg [31:0] pwdata_i=0, rx_data_i=0;
     reg tx_busy_i=0, tx_done_i=0, rx_done_i=0, parity_error_i=0;
+    reg rx_frame_error_i=0;
     wire read_en_o,write_en_o,error_o,start_tx_o,rx_full_o;
     wire [31:0] prdata_o,tx_data_o;
     wire [1:0] data_bit_num_o;
@@ -46,6 +47,16 @@ module tb_register_file;
     initial begin
         repeat(3) @(negedge clk);reset_n=1;
         rd(12'hc,1,0);rd(12'h14,10,0);
+        // Framing is sticky, separately masked, W1C; new error wins over clear.
+        wr(12'h24,8);
+        @(negedge clk);rx_frame_error_i=1;
+        @(negedge clk);rx_frame_error_i=0;
+        rd(12'h28,10,0);rd(12'h14,42,0);check(irq_o,"framing IRQ without RX byte");
+        @(negedge clk);access_i=1;pwrite_i=1;pstrb_i=1;paddr_i=12'h14;pwdata_i=32;rx_frame_error_i=1;
+        @(negedge clk);access_i=0;rx_frame_error_i=0;
+        rd(12'h14,42,0);check(irq_o,"new framing event wins simultaneous W1C");
+        wr(12'h14,32);rd(12'h14,10,0);check(!irq_o,"framing W1C releases IRQ");
+        wr(12'h24,0);
         // Staging only: neither an address preview nor a data write starts TX.
         @(negedge clk);pwrite_i=1;paddr_i=0;pwdata_i=99;pstrb_i=15;
         repeat(3) @(negedge clk);rd(0,0,0);

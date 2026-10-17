@@ -21,6 +21,8 @@ module tb_firmware_echo_cosim;
     integer received=0;
     integer BIT_NS=8681;
     reg [31:0] baud_phase=0;
+    reg [31:0] diagnostic_seen=0;
+    reg allow_rx_error=0;
     always @(posedge clk) begin
         cycles<=cycles+1;
         accepted<=reset_n && (av_read || av_write) && !av_waitrequest;
@@ -29,8 +31,8 @@ module tb_firmware_echo_cosim;
     end
     always @(negedge clk) if(reset_n)
         $firmware_tick(av_address,av_read,av_write,av_writedata,av_byteenable,
-                       accepted,rvalid,wvalid,rdata,response,cycles,control,irq,baud_phase);
-    always @(control) if(control[3]) $fatal(1,"C echo application reported error");
+                       accepted,rvalid,wvalid,rdata,response,cycles,control,irq,baud_phase,diagnostic_seen);
+    always @(control) if(control[3] && !allow_rx_error) $fatal(1,"C echo application reported error");
     task send_byte(input [7:0] value);
         begin
             rx=0; #BIT_NS;
@@ -97,7 +99,14 @@ module tb_firmware_echo_cosim;
         fork send_byte(10);begin expect_byte(13);expect_byte(10);end join
         #300000;baud_phase=3;#300000;
         if(dut.uart.u_registers.baud_div_o!=27)$fatal(1,"unsupported baud must not change active divider");
-        $display("PASS firmware_echo_cosim: actual C app + UART RTL, %0d output bytes, line endings, burst, real IRQ serviced, JTAG baud commands 9600/115200 and rejected 230400",received);
+        // Wrong-baud input has no Enter: the real ISR/main must still report it.
+        allow_rx_error=1;BIT_NS=104167;send_byte(0);#500000;
+        if(!diagnostic_seen)$fatal(1,"wrong-baud framing error did not reach JTAG");
+        // A lost Enter must not prevent restoring baud using the JTAG command.
+        baud_phase=4;#1000000;BIT_NS=8681;
+        fork send_byte("K");expect_byte("K");join
+        fork send_byte(10);begin expect_byte(13);expect_byte(10);end join
+        $display("PASS firmware_echo_cosim: actual C app + UART RTL, %0d output bytes, line endings, burst, real IRQ, baud commands, wrong-baud framing diagnostic without Enter and recovery",received);
         $finish;
     end
     initial begin #100000000; $fatal(1,"echo co-simulation watchdog"); end

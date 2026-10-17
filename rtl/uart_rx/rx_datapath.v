@@ -33,7 +33,6 @@ module rx_datapath (
             sample_count <= 4'd0;
             bit_count <= 4'd0;
         end else if (begin_frame) begin
-            // Only an accepted START resets timing, never an edge in DATA.
             sample_count <= 4'd0;
             bit_count <= 4'd0;
         end else begin
@@ -56,7 +55,6 @@ module rx_datapath (
             rx_data_o <= 8'd0;
             latched_parity <= 1'b0;
         end else begin
-            // LSB-first indexing zero-extends 5/6/7-bit characters correctly.
             if (half_bit && shift_rx_en && (bit_count < data_count))
                 rx_data_o[bit_count[2:0]] <= rx_sync;
             if (half_bit && latch_parity_en) latched_parity <= rx_sync;

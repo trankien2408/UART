@@ -3,24 +3,20 @@ module tx_controller (
     input  wire       clk,
     input  wire       reset_n,
     
-    // Tín hiệu ngoại vi & Cấu hình
     input  wire       start_tx_i,
     input  wire       cts_n,
     input  wire       parity_en_i,
     input  wire       bit_is_parity,
     input  wire [1:0] stop_bit_num_i,
      
-    // Tín hiệu phản hồi từ Datapath
     input  wire       tick_max,
     input  wire       bit_cnt_max,
     
-    // Tín hiệu điều khiển ngõ ra cho Datapath
     output reg        clr_tick_cnt,
     output reg  [1:0] tx_sel,
     output reg        load_tx,
     output reg        shift_tx,
     
-    // Tín hiệu gửi ra Top Module
     output reg        tx_busy_o,
     output reg        tx_done_o   
 );
@@ -34,7 +30,6 @@ module tx_controller (
     reg [1:0] stop_cnt;
     wire [1:0] max_stop_val;
 
-    // Gán giá trị giới hạn đếm Bit STOP: 2'b00 -> 0 (1 bit), 2'b01 -> 1 (2 bit)
     assign max_stop_val = (stop_bit_num_i == 2'b01) ? 2'd1 : 2'd0;
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) begin
@@ -56,7 +51,6 @@ module tx_controller (
     end
  
     always @* begin
-        // Giá trị mặc định
         next_state   = current_state;
         tx_busy_o    = 1'b1;
         tx_done_o    = 1'b0;

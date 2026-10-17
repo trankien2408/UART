@@ -5,13 +5,11 @@ module rx_topmodule (
     input  wire       tick_rx,
     input  wire       rx,
     
-    // Tín hiệu cấu hình ngoại vi
     input  wire [1:0] data_bit_num_i,
     input  wire [1:0] stop_bit_num_i,
     input  wire       parity_en_i,
     input  wire       parity_type_i,
     
-    // Tín hiệu ngõ ra
     output wire [7:0] rx_data_o,
     output wire       rx_done_o,
     output wire       parity_error_o,
@@ -39,7 +37,6 @@ module rx_topmodule (
             frame_cfg <= {stop_bit_num_i, parity_type_i, parity_en_i, data_bit_num_i};
     end
 
-    // Kết nối khối Datapath
     rx_datapath u_rx_datapath (
         .clk             (clk),
         .reset_n         (reset_n),
@@ -62,7 +59,6 @@ module rx_topmodule (
         .parity_error_o  (parity_error_o)
     );
 
-    // Kết nối khối FSM Controller
     rx_controller u_rx_controller (
         .clk             (clk),
         .reset_n         (reset_n),

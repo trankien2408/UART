@@ -25,6 +25,7 @@ static int transmitting, failed;
 static uint32_t tx_started, leds, tx_timeout;
 static input_line uart_line, jtag_line;
 static uint32_t pending_baud, baud_requested;
+static int rx_corrupt, rx_error_reported;
 
 // JTAG-only command. Normal lines still use Enter-to-send chat.
 static int baud_command(const input_line *line)
@@ -42,9 +43,13 @@ static int baud_command(const input_line *line)
     uint16_t div;
     if (!valid || dti_baud_divider(ALT_CPU_FREQ,rate,&div,0)!=DTI_OK)
         console_text("BAUD: invalid rate or error exceeds 2%\r\n");
-    else if (uart_line.length || uart_line.discard)
+    else if ((uart_line.length || uart_line.discard) && !rx_corrupt)
         console_text("BAUD: finish UART input line first\r\n");
-    else { pending_baud=rate; baud_requested=uart_cycles(); }
+    else {
+        // A damaged line may have lost Enter. Keep JTAG baud recovery usable.
+        if (rx_corrupt) uart_line=(input_line){0};
+        pending_baud=rate; baud_requested=uart_cycles();
+    }
     return 1;
 }
 static void console_uint(uint32_t value)
@@ -90,6 +95,20 @@ static void receive_char(input_line *line, uint8_t byte, int from_jtag)
         return;
     }
     line->skip_lf = 0;
+    if (!from_jtag && (byte<32u || byte>126u) &&
+        byte!='\r' && byte!='\n' && byte!='\b' && byte!=0x7fu) {
+        // ASCII chat: show invisible/control bytes, without claiming a bit error.
+        if (!rx_error_reported) {
+            static const char hex[]="0123456789ABCDEF";
+            char marker[]="[UART RX NON-TEXT 0x00; check baud]\r\n";
+            marker[sizeof("[UART RX NON-TEXT 0x")-1u]=hex[byte>>4];
+            marker[sizeof("[UART RX NON-TEXT 0x")]=hex[byte&15u];
+            report_error(marker,0);
+        }
+        rx_error_reported=1; rx_corrupt=1;
+        line->length=0; line->discard=1;
+        return;
+    }
     if (byte == '\r' || byte == '\n') {
         line->skip_lf = byte == '\r';
         local_echo(from_jtag, newline, sizeof(newline));
@@ -104,6 +123,7 @@ static void receive_char(input_line *line, uint8_t byte, int from_jtag)
         }
         line->length = 0;
         line->discard = 0;
+        if (!from_jtag) { rx_corrupt=0; rx_error_reported=0; }
     } else if (byte == '\b' || byte == 0x7fu) {
         if (!line->discard && line->length) {
             --line->length;
@@ -128,6 +148,7 @@ int uart_demo_init(void)
     transmitting = failed = 0;
     leds = 0;
     pending_baud=0; baud_requested=0; tx_timeout=TX_TIMEOUT;
+    rx_corrupt=0; rx_error_reported=0;
     uart_line = (input_line){0};
     jtag_line = (input_line){0};
     uart_mmio_write(CONTROL_BASE, 0);
@@ -157,6 +178,12 @@ void uart_demo_poll(void)
             return;
         }
     }
+    if (uart_irq_take_rx_errors() & UART_RX_ERROR_FRAME) {
+        if (!rx_error_reported)
+            report_error("[UART RX ERROR: FRAME/BREAK; check baud]\r\n",0);
+        rx_error_reported=1; rx_corrupt=1;
+        uart_line.length=0; uart_line.discard=1; uart_line.skip_lf=0;
+    }
     if (uart_irq_faults()) {
         // Mat byte co the lam mat ca dau Enter: dung lai, khong gui dong sai.
         report_error("ERROR: RX FIFO overrun (hardware/software); reset required\r\n", 1);
@@ -165,8 +192,11 @@ void uart_demo_poll(void)
     uint8_t byte;
     int result = uart_irq_receive(&byte);
     if (result == DTI_PARITY) {
+        rx_corrupt=1;
         uart_line.discard = 1;
-        report_error("ERROR: RX parity; line discarded until Enter\r\n", 0);
+        if (!rx_error_reported)
+            report_error("[UART RX ERROR: PARITY; line discarded until Enter]\r\n", 0);
+        rx_error_reported=1;
     } else if (result == DTI_OK) {
         receive_char(&uart_line, byte, 0);
     }
@@ -213,6 +243,7 @@ void uart_demo_poll(void)
                 console_text("BAUD: requested ");console_uint(pending_baud);
                 console_text("; actual ");console_uint(actual);
                 console_text("; change picocom baud now\r\n");
+                rx_corrupt=0; rx_error_reported=0;
                 pending_baud=0;
             }
         }

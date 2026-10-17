@@ -42,6 +42,10 @@ void dti_clear_overrun(const dti_uart *dev)
 {
     uart_mmio_write(dev->base + DTI_FIFO_STATUS, DTI_RX_OVERRUN);
 }
+void dti_clear_frame_error(const dti_uart *dev)
+{
+    uart_mmio_write(dev->base + DTI_FIFO_STATUS, DTI_RX_FRAME_ERROR);
+}
 int dti_try_queue(const dti_uart *dev, uint8_t byte)
 {
     if (dti_fifo_status(dev) & DTI_TX_FULL) return DTI_AGAIN;

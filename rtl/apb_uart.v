@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-// Integration contract: clk and pclk MUST be the same clock net (no CDC).
-// reset_n/presetn are active-low; asserting either resets the entire peripheral.
 module apb_uart #(
     parameter integer CLK_FREQ = 50000000,
     parameter integer BAUDRATE = 115200
@@ -23,7 +21,7 @@ module apb_uart #(
     wire [7:0] rx_data;
     wire [1:0] data_bits;
     wire stop_bits, parity_en, parity_type, start_tx;
-    wire tx_busy, tx_done, rx_done, parity_error, rx_full, core_rts_n;
+    wire tx_busy, tx_done, rx_done, parity_error, frame_error, rx_full, core_rts_n;
     wire [15:0] baud_div;
     wire baud_apply, rx_idle;
     reg [4:0] rx_quiet_ticks;
@@ -34,7 +32,6 @@ module apb_uart #(
         else if (tick_rx && rx_quiet_ticks<16) rx_quiet_ticks<=rx_quiet_ticks+1'b1;
     end
 
-    // CTS is asynchronous to the FPGA clock. Fail closed while reset is active.
     reg cts_meta, cts_sync;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -64,6 +61,7 @@ module apb_uart #(
         .parity_type_o(parity_type), .start_tx_o(start_tx),
         .tx_busy_i(tx_busy), .tx_done_i(tx_done), .rx_done_i(rx_done),
         .parity_error_i(parity_error), .rx_data_i({24'd0, rx_data}),
+        .rx_frame_error_i(frame_error),
         .rx_baud_safe_i(rx_baud_safe), .baud_div_o(baud_div),
         .baud_apply_o(baud_apply), .irq_o(irq), .rx_full_o(rx_full)
     );
@@ -83,7 +81,6 @@ module apb_uart #(
         .data_bit_num_i(data_bits), .stop_bit_num_i({1'b0, stop_bits}),
         .parity_en_i(parity_en), .parity_type_i(parity_type),
         .rx_data_o(rx_data), .rx_done_o(rx_done), .parity_error_o(parity_error),
-        // Invalid stop-bit frames are discarded inside the RX core.
-        .frame_error_o(), .rts_n(core_rts_n), .baud_idle_o(rx_idle)
+        .frame_error_o(frame_error), .rts_n(core_rts_n), .baud_idle_o(rx_idle)
     );
 endmodule

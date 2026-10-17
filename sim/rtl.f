@@ -8,4 +8,4 @@
 ../rtl/apb_slave.v
 ../rtl/uart_fifo.v
 ../rtl/register_file.v
-../rtl/dti_uart.v
+../rtl/apb_uart.v

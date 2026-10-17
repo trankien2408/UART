@@ -43,7 +43,6 @@ module rx_controller (
                 if (start_rx) next_state = S_START;
             end
             S_START: begin
-                // Reject a short LOW glitch instead of treating it as a frame.
                 if (half_bit && rx_s) next_state = S_IDLE;
                 else if (sample_max) next_state = S_DATA;
             end
@@ -56,8 +55,6 @@ module rx_controller (
                 frame_error_o = !rx_s || has_frame_error;
                 if (last_stop) begin
                     rx_done_o = rx_s && !has_frame_error;
-                    // Rearm at the centre of the final stop bit to allow
-                    // consecutive frames even when the sender is faster.
                     next_state = S_IDLE;
                 end
             end

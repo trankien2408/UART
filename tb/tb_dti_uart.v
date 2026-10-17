@@ -22,7 +22,7 @@ module tb_dti_uart;
     integer last_wait;
     reg [31:0] result;
     bit error;
-    dti_uart #(.CLK_FREQ(CLK_FREQ), .BAUDRATE(BAUDRATE)) dut (
+    apb_uart #(.CLK_FREQ(CLK_FREQ), .BAUDRATE(BAUDRATE)) dut (
         .clk(clk), .reset_n(reset_n), .pclk(clk), .presetn(presetn),
         .psel(psel), .penable(penable), .pwrite(pwrite), .pstrb(pstrb),
         .paddr(paddr), .pwdata(pwdata), .pready(pready), .pslverr(pslverr),
@@ -269,8 +269,12 @@ module tb_dti_uart;
             write_reg(CFG,config_word(8,2,0));
             send_rx(8'ha5,8,2,0,0,st,BIT_NS); #(BIT_NS);
             expect_reg(STT,1);
+            read_reg(12'h14,result);check(result[5],"bad stop sets sticky framing status");
+            write_reg(12'h14,32); // acknowledge new framing status before later FIFO checks
         end
         rx=0; #(BIT_NS*14); rx=1; #(BIT_NS*2); expect_reg(STT,1);
+        read_reg(12'h14,result);check(result[5],"break sets sticky framing status");
+        write_reg(12'h14,32);
         send_rx(8'hb7,8,2,0,0,0,BIT_NS); check_received(8'hb7,0);
 
         $display("CASE unread RX preservation and RTS, no gap between two frames");

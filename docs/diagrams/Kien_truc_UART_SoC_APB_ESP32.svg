@@ -1,0 +1,434 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4200" height="1800" viewBox="0 0 4200 1800"><defs>
+<marker id="bus" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#245d85"/></marker>
+<marker id="uart" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#25805d"/></marker>
+<marker id="jtag" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#8053a0"/></marker>
+<marker id="irq" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#b74773"/></marker>
+<marker id="ctrl" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#b17420"/></marker>
+<marker id="gray" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#89929c"/></marker>
+<marker id="tick" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#13899a"/></marker>
+</defs><g font-family="Noto Sans, DejaVu Sans, sans-serif">
+<rect x="0" y="0" width="4200" height="1800" rx="0" fill="#fff" stroke="#fff" stroke-width="2"/>
+<text x="35" y="55" font-size="34" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="35" dy="0">HỆ THỐNG UART LẬP TRÌNH BAUD VÀ INTERRUPT — KIẾN TRÚC PHẦN CỨNG</tspan>
+</text>
+<text x="35" y="94" font-size="23" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="35" dy="0">Nios V/m → Avalon-MM interconnect → Avalon–APB Bridge → APB Slave → Register File / FIFO → UART TX, RX</tspan>
+</text>
+<rect x="30" y="130" width="3080" height="1480" rx="0" fill="#f5f6f8" stroke="#818b94" stroke-width="2"/>
+<text x="55" y="171" font-size="27" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="55" dy="0">FPGA CYCLONE IV E (EP4CE115F29C7) — de2_115_uart_top</tspan>
+</text>
+<rect x="3170" y="130" width="1000" height="1480" rx="0" fill="#f5f6f8" stroke="#818b94" stroke-width="2"/>
+<text x="3195" y="171" font-size="27" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="3195" dy="0">BOARD ESP32 &amp; MÁY TÍNH</tspan>
+</text>
+<rect x="55" y="205" width="2750" height="1260" rx="0" fill="#fff" stroke="#9daebc" stroke-width="2"/>
+<text x="80" y="246" font-size="26" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="80" dy="0">SoC Platform Designer — uart_soc.qsys / uart_soc</tspan>
+</text>
+<rect x="480" y="310" width="220" height="950" rx="0" fill="#e0eafb" stroke="#7d9bbb" stroke-width="2"/>
+<text x="590" y="365" font-size="26" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="590" dy="0">Avalon-MM</tspan>
+<tspan x="590" dy="33.28">interconnect</tspan>
+</text>
+<text x="590" y="483" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="590" dy="0">Giải mã địa chỉ</tspan>
+<tspan x="590" dy="26.88">Phân xử</tspan>
+<tspan x="590" dy="26.88">Định tuyến</tspan>
+</text>
+<text x="590" y="1120" font-size="21" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="590" dy="0">Yêu cầu →</tspan>
+<tspan x="590" dy="26.88">← Phản hồi</tspan>
+</text>
+<polyline points="700,340 760,340" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)" marker-start="url(#bus)"/>
+<rect x="760" y="285" width="550" height="115" rx="12" fill="#fff1cb" stroke="#6f8ba1" stroke-width="2"/>
+<text x="1035.0" y="319" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1035.0" dy="0">On-chip RAM • 128 KiB</tspan>
+</text>
+<text x="1035.0" y="351" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="1035.0" dy="0">0x0000_0000 • mã C, stack, buffer</tspan>
+</text>
+<polyline points="700,430 1370,430 1370,340 1430,340" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)" marker-start="url(#bus)"/>
+<rect x="1430" y="285" width="550" height="115" rx="12" fill="#fff1cb" stroke="#6f8ba1" stroke-width="2"/>
+<text x="1705.0" y="319" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1705.0" dy="0">PIO control • 4 bit</tspan>
+</text>
+<text x="1705.0" y="351" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="1705.0" dy="0">0x0002_0010 • loopback / CTS / LED</tspan>
+</text>
+<polyline points="700,455 2020,455 2020,340 2080,340" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)" marker-start="url(#bus)"/>
+<rect x="2080" y="285" width="550" height="115" rx="12" fill="#edf0e8" stroke="#6f8ba1" stroke-width="2"/>
+<text x="2355.0" y="319" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2355.0" dy="0">System ID</tspan>
+</text>
+<text x="2355.0" y="351" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2355.0" dy="0">0x0002_0008 • kiểm tra đúng phần cứng</tspan>
+</text>
+<rect x="85" y="550" width="325" height="620" rx="0" fill="#fff0d8" stroke="#c8a45d" stroke-width="2"/>
+<text x="247" y="595" font-size="27" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="247" dy="0">CPU Nios V/m</tspan>
+</text>
+<text x="247" y="632" font-size="18" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="247" dy="0">Firmware C: chat / ISR / baud</tspan>
+</text>
+<rect x="105" y="685" width="285" height="110" rx="12" fill="#dce9fc" stroke="#6f8ba1" stroke-width="2"/>
+<text x="247.5" y="719" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="247.5" dy="0">instruction_manager</tspan>
+</text>
+<text x="247.5" y="751" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="247.5" dy="0">Avalon-MM • đọc lệnh</tspan>
+</text>
+<rect x="105" y="870" width="285" height="110" rx="12" fill="#dce9fc" stroke="#6f8ba1" stroke-width="2"/>
+<text x="247.5" y="904" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="247.5" dy="0">data_manager</tspan>
+</text>
+<text x="247.5" y="936" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="247.5" dy="0">Avalon-MM • load / store</tspan>
+</text>
+<rect x="105" y="1040" width="285" height="90" rx="12" fill="#fff8e6" stroke="#6f8ba1" stroke-width="2"/>
+<text x="247.5" y="1074" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="247.5" dy="0">Timer mtime</tspan>
+</text>
+<text x="247.5" y="1106" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="247.5" dy="0">CPU timer • 0x0003_0000</tspan>
+</text>
+<polyline points="390,740 480,740" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)" marker-start="url(#bus)"/>
+<polyline points="390,925 480,925" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)" marker-start="url(#bus)"/>
+<text x="435" y="721" font-size="17" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="435" dy="0">Lệnh</tspan>
+</text>
+<text x="435" y="905" font-size="17" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="435" dy="0">MMIO</tspan>
+</text>
+<rect x="760" y="485" width="2010" height="790" rx="0" fill="#fff0d8" stroke="#c8a45d" stroke-width="2"/>
+<text x="780" y="524" font-size="25" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="780" dy="0">uart_avalon — Avalon-MM slave • base 0x0002_1000</tspan>
+</text>
+<rect x="1425" y="550" width="1320" height="700" rx="0" fill="#fffaf0" stroke="#c7b58d" stroke-width="2"/>
+<text x="1445" y="586" font-size="25" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="1445" dy="0">UART_core = apb_uart</tspan>
+</text>
+<rect x="790" y="620" width="290" height="590" rx="0" fill="#e9e0f2" stroke="#a183b1" stroke-width="2"/>
+<text x="935" y="660" font-size="27" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="935" dy="0">Avalon–APB</tspan>
+<tspan x="935" dy="34.56">Bridge</tspan>
+</text>
+<rect x="810" y="730" width="250" height="100" rx="12" fill="#f8f2fb" stroke="#6f8ba1" stroke-width="2"/>
+<text x="935.0" y="764" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="935.0" dy="0">Chốt yêu cầu</tspan>
+</text>
+<text x="935.0" y="796" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="935.0" dy="0">addr / data / write / strb</tspan>
+</text>
+<rect x="810" y="860" width="250" height="150" rx="12" fill="#f8f2fb" stroke="#6f8ba1" stroke-width="2"/>
+<text x="935.0" y="894" font-size="22" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="935.0" dy="0">FSM</tspan>
+</text>
+<text x="935.0" y="926" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="935.0" dy="0">IDLE → SETUP</tspan>
+<tspan x="935.0" dy="23.04">→ ACCESS → RESPONSE</tspan>
+<tspan x="935.0" dy="23.04">ACCESS chờ PREADY</tspan>
+</text>
+<rect x="810" y="1040" width="250" height="100" rx="12" fill="#f8f2fb" stroke="#6f8ba1" stroke-width="2"/>
+<text x="935.0" y="1074" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="935.0" dy="0">Trả phản hồi</tspan>
+</text>
+<text x="935.0" y="1106" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="935.0" dy="0">rdata / valid / response</tspan>
+</text>
+<text x="935" y="1180" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="935" dy="0">avalon_apb_bridge.v</tspan>
+</text>
+<polyline points="700,800 790,800" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)" marker-start="url(#bus)"/>
+<text x="737" y="777" font-size="18" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="737" dy="0">MM</tspan>
+</text>
+<rect x="1450" y="635" width="205" height="575" rx="0" fill="#dce9fc" stroke="#7d9bbb" stroke-width="2"/>
+<text x="1552" y="680" font-size="26" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1552" dy="0">APB Slave</tspan>
+</text>
+<text x="1552" y="766" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1552" dy="0">Nhận pha</tspan>
+<tspan x="1552" dy="26.88">SETUP / ACCESS</tspan>
+<tspan x="1552" dy="26.88">Phát access</tspan>
+<tspan x="1552" dy="26.88">Chuyển địa chỉ,</tspan>
+<tspan x="1552" dy="26.88">dữ liệu, strobe</tspan>
+<tspan x="1552" dy="26.88">Trả ready / error</tspan>
+</text>
+<text x="1552" y="1165" font-size="19" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="1552" dy="0">apb_slave.v</tspan>
+</text>
+<text x="1260" y="622" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="1260" dy="0">APB4 • địa chỉ byte</tspan>
+</text>
+<polyline points="1080,690 1450,690" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="678" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PADDR[11:0]</tspan>
+</text>
+<polyline points="1080,747 1450,747" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="735" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PSEL</tspan>
+</text>
+<polyline points="1080,804 1450,804" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="792" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PENABLE</tspan>
+</text>
+<polyline points="1080,861 1450,861" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="849" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PWRITE</tspan>
+</text>
+<polyline points="1080,918 1450,918" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="906" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PWDATA[31:0]</tspan>
+</text>
+<polyline points="1080,975 1450,975" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="963" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PSTRB[3:0]</tspan>
+</text>
+<polyline points="1450,1032 1080,1032" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="1020" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PRDATA[31:0]</tspan>
+</text>
+<polyline points="1450,1089 1080,1089" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="1077" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PREADY</tspan>
+</text>
+<polyline points="1450,1146 1080,1146" fill="none" stroke="#245d85" stroke-width="2" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1265" y="1134" font-size="21" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="1265" dy="0">PSLVERR</tspan>
+</text>
+<rect x="1750" y="635" width="545" height="575" rx="0" fill="#dce9fc" stroke="#7d9bbb" stroke-width="2"/>
+<text x="2022" y="677" font-size="27" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2022" dy="0">Register File</tspan>
+</text>
+<text x="1770" y="720" font-size="20" fill="#172b43" text-anchor="start" font-weight="normal">
+<tspan x="1770" dy="0">Offset byte</tspan>
+<tspan x="1770" dy="25.6">0x00  TX</tspan>
+<tspan x="1770" dy="25.6">0x04  CFG</tspan>
+<tspan x="1770" dy="25.6">0x08  CTRL</tspan>
+<tspan x="1770" dy="25.6">0x0C  STT</tspan>
+<tspan x="1770" dy="25.6">0x10  RX</tspan>
+<tspan x="1770" dy="25.6">0x14  FIFO</tspan>
+<tspan x="1770" dy="25.6">0x18  BAUD_SHADOW</tspan>
+<tspan x="1770" dy="25.6">0x1C  BAUD_ACTIVE</tspan>
+<tspan x="1770" dy="25.6">0x20  BAUD_CTRL</tspan>
+<tspan x="1770" dy="25.6">0x24  INT_EN</tspan>
+<tspan x="1770" dy="25.6">0x28  INT_ST</tspan>
+</text>
+<rect x="2050" y="740" width="220" height="110" rx="12" fill="#fff2cd" stroke="#6f8ba1" stroke-width="2"/>
+<text x="2160.0" y="774" font-size="24" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2160.0" dy="0">TX FIFO</tspan>
+</text>
+<text x="2160.0" y="806" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2160.0" dy="0">16 × 8 bit</tspan>
+</text>
+<rect x="2050" y="970" width="220" height="110" rx="12" fill="#fff2cd" stroke="#6f8ba1" stroke-width="2"/>
+<text x="2160.0" y="1004" font-size="24" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2160.0" dy="0">RX FIFO</tspan>
+</text>
+<text x="2160.0" y="1036" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2160.0" dy="0">16 × 9 bit</tspan>
+<tspan x="2160.0" dy="23.04">8 data + parity</tspan>
+</text>
+<text x="2022" y="1177" font-size="19" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2022" dy="0">register_file.v + uart_fifo.v</tspan>
+</text>
+<polyline points="1655,820 1750,820" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1702" y="752" font-size="15" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="1702" dy="0">access</tspan>
+<tspan x="1702" dy="19.2">wr / addr</tspan>
+<tspan x="1702" dy="19.2">data / strb</tspan>
+</text>
+<polyline points="1750,1040 1655,1040" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)"/>
+<text x="1702" y="1075" font-size="15" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="1702" dy="0">rdata</tspan>
+<tspan x="1702" dy="19.2">ready</tspan>
+<tspan x="1702" dy="19.2">error</tspan>
+</text>
+<rect x="2350" y="625" width="360" height="105" rx="12" fill="#dcefe6" stroke="#6f8ba1" stroke-width="2"/>
+<text x="2530.0" y="659" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2530.0" dy="0">Baud generator</tspan>
+</text>
+<text x="2530.0" y="691" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2530.0" dy="0">Divider runtime • ticks ×16</tspan>
+</text>
+<polyline points="1950,635 1950,605 2515,605 2515,625" fill="none" stroke="#b17420" stroke-width="3" stroke-linejoin="round" marker-end="url(#ctrl)"/>
+<text x="2160" y="595" font-size="17" fill="#b17420" text-anchor="middle" font-weight="normal">
+<tspan x="2160" dy="0">baud_div[15:0] / baud_apply</tspan>
+</text>
+<rect x="2350" y="800" width="360" height="120" rx="12" fill="#dcefe6" stroke="#6f8ba1" stroke-width="2"/>
+<text x="2530.0" y="834" font-size="26" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2530.0" dy="0">TX core</tspan>
+</text>
+<text x="2530.0" y="866" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2530.0" dy="0">tx_topmodule</tspan>
+<tspan x="2530.0" dy="23.04">Controller + datapath</tspan>
+</text>
+<rect x="2350" y="1030" width="360" height="120" rx="12" fill="#dcefe6" stroke="#6f8ba1" stroke-width="2"/>
+<text x="2530.0" y="1064" font-size="26" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2530.0" dy="0">RX core</tspan>
+</text>
+<text x="2530.0" y="1096" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="2530.0" dy="0">rx_topmodule</tspan>
+<tspan x="2530.0" dy="23.04">Controller + datapath</tspan>
+</text>
+<polyline points="2270,795 2320,795 2320,860 2350,860" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)"/>
+<polyline points="2350,1090 2315,1090 2315,1025 2270,1025" fill="none" stroke="#245d85" stroke-width="3" stroke-linejoin="round" marker-end="url(#bus)"/>
+<polyline points="2460,730 2460,800" fill="none" stroke="#13899a" stroke-width="3" stroke-linejoin="round" marker-end="url(#tick)"/>
+<text x="2472" y="770" font-size="17" fill="#13899a" text-anchor="start" font-weight="normal">
+<tspan x="2472" dy="0">tick_tx</tspan>
+</text>
+<polyline points="2680,730 2730,730 2730,990 2550,990 2550,1030" fill="none" stroke="#13899a" stroke-width="3" stroke-linejoin="round" marker-end="url(#tick)"/>
+<text x="2570" y="979" font-size="17" fill="#13899a" text-anchor="start" font-weight="normal">
+<tspan x="2570" dy="0">tick_rx</tspan>
+</text>
+<text x="2530" y="951" font-size="16" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="2530" dy="0">TX: data / start → ; busy / done ←</tspan>
+</text>
+<text x="2530" y="1195" font-size="16" fill="#245d85" text-anchor="middle" font-weight="normal">
+<tspan x="2530" dy="0">RX: data / done / parity_error → FIFO</tspan>
+</text>
+<rect x="2840" y="690" width="235" height="555" rx="0" fill="#fff1cf" stroke="#c9aa6a" stroke-width="2"/>
+<text x="2957" y="731" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2957" dy="0">Logic top</tspan>
+</text>
+<text x="2957" y="781" font-size="20" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="2957" dy="0">GPIO routing</tspan>
+<tspan x="2957" dy="25.6">Loopback / CTS</tspan>
+</text>
+<text x="2957" y="932" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2957" dy="0">UART_TX</tspan>
+<tspan x="2957" dy="26.88">GPIO[0] / AB22</tspan>
+</text>
+<text x="2957" y="1150" font-size="21" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="2957" dy="0">UART_RX</tspan>
+<tspan x="2957" dy="26.88">GPIO[1] / AC15</tspan>
+</text>
+<polyline points="2710,860 2840,860" fill="none" stroke="#25805d" stroke-width="3" stroke-linejoin="round" marker-end="url(#uart)"/>
+<text x="2774" y="843" font-size="20" fill="#25805d" text-anchor="middle" font-weight="normal">
+<tspan x="2774" dy="0">tx</tspan>
+</text>
+<polyline points="2840,1090 2710,1090" fill="none" stroke="#25805d" stroke-width="3" stroke-linejoin="round" marker-end="url(#uart)"/>
+<text x="2774" y="1074" font-size="20" fill="#25805d" text-anchor="middle" font-weight="normal">
+<tspan x="2774" dy="0">rx</tspan>
+</text>
+<rect x="3200" y="570" width="940" height="700" rx="0" fill="#fff0d8" stroke="#c8a45d" stroke-width="2"/>
+<text x="3225" y="613" font-size="25" fill="#172b43" text-anchor="start" font-weight="bold">
+<tspan x="3225" dy="0">BOARD ESP32 — DÙNG CHIP USB-UART CÓ SẴN</tspan>
+</text>
+<text x="3225" y="651" font-size="19" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="3225" dy="0">CPU ESP32 giữ reset (EN nối GND); không chạy firmware chuyển tiếp</tspan>
+</text>
+<rect x="3235" y="815" width="215" height="90" rx="12" fill="#dcefe6" stroke="#6f8ba1" stroke-width="2"/>
+<text x="3342.5" y="849" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="3342.5" dy="0">RXD</tspan>
+</text>
+<text x="3342.5" y="881" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="3342.5" dy="0">Đầu vào chip</tspan>
+</text>
+<rect x="3235" y="1045" width="215" height="90" rx="12" fill="#dcefe6" stroke="#6f8ba1" stroke-width="2"/>
+<text x="3342.5" y="1079" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="3342.5" dy="0">TXD</tspan>
+</text>
+<text x="3342.5" y="1111" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="3342.5" dy="0">Đầu ra chip</tspan>
+</text>
+<rect x="3540" y="750" width="550" height="440" rx="0" fill="#dcefe6" stroke="#84a78a" stroke-width="2"/>
+<text x="3815" y="796" font-size="28" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="3815" dy="0">CHIP USB-UART</tspan>
+</text>
+<rect x="3570" y="830" width="490" height="85" rx="12" fill="#f3faf4" stroke="#6f8ba1" stroke-width="2"/>
+<text x="3815.0" y="864" font-size="23" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="3815.0" dy="0">UART RX</tspan>
+</text>
+<text x="3815.0" y="896" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="3815.0" dy="0">Nhận dữ liệu nối tiếp từ FPGA</tspan>
+</text>
+<rect x="3570" y="1060" width="490" height="85" rx="12" fill="#f3faf4" stroke="#6f8ba1" stroke-width="2"/>
+<text x="3815.0" y="1094" font-size="23" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="3815.0" dy="0">UART TX</tspan>
+</text>
+<text x="3815.0" y="1126" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="3815.0" dy="0">Phát dữ liệu nối tiếp đến FPGA</tspan>
+</text>
+<text x="3815" y="990" font-size="25" fill="#172b43" text-anchor="middle" font-weight="normal">
+<tspan x="3815" dy="0">USB ↔ bộ đệm ↔ UART</tspan>
+</text>
+<polyline points="3075,860 3235,860" fill="none" stroke="#25805d" stroke-width="3" stroke-linejoin="round" marker-end="url(#uart)"/>
+<text x="3155" y="835" font-size="17" fill="#25805d" text-anchor="middle" font-weight="normal">
+<tspan x="3155" dy="0">TX → RXD</tspan>
+</text>
+<polyline points="3450,860 3570,860" fill="none" stroke="#25805d" stroke-width="3" stroke-linejoin="round" marker-end="url(#uart)"/>
+<polyline points="3570,1090 3450,1090" fill="none" stroke="#25805d" stroke-width="3" stroke-linejoin="round" marker-end="url(#uart)"/>
+<polyline points="3235,1090 3075,1090" fill="none" stroke="#25805d" stroke-width="3" stroke-linejoin="round" marker-end="url(#uart)"/>
+<text x="3155" y="1065" font-size="17" fill="#25805d" text-anchor="middle" font-weight="normal">
+<tspan x="3155" dy="0">RX ← TXD</tspan>
+</text>
+<rect x="3540" y="1370" width="550" height="165" rx="12" fill="#fff2cd" stroke="#6f8ba1" stroke-width="2"/>
+<text x="3815.0" y="1404" font-size="26" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="3815.0" dy="0">PC • Serial terminal</tspan>
+</text>
+<text x="3815.0" y="1436" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="3815.0" dy="0">picocom trong terminal VS Code</tspan>
+<tspan x="3815.0" dy="23.04">/dev/ttyUSB* hoặc /dev/ttyACM*</tspan>
+<tspan x="3815.0" dy="23.04">Baud / data / parity / stop khớp FPGA</tspan>
+</text>
+<polyline points="3815,1190 3815,1370" fill="none" stroke="#8053a0" stroke-width="3" stroke-linejoin="round" marker-end="url(#jtag)" marker-start="url(#jtag)"/>
+<text x="3837" y="1330" font-size="23" fill="#8053a0" text-anchor="start" font-weight="normal">
+<tspan x="3837" dy="0">USB</tspan>
+</text>
+<text x="3225" y="1228" font-size="20" fill="#25805d" text-anchor="start" font-weight="normal">
+<tspan x="3225" dy="0">Tín hiệu UART 3,3 V • FPGA và ESP32 nối chung GND</tspan>
+</text>
+<text x="3210" y="1435" font-size="21" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="3210" dy="0">PC gửi / nhận byte</tspan>
+<tspan x="3210" dy="26.88">qua USB; chip tạo /</tspan>
+<tspan x="3210" dy="26.88">giải mã TXD, RXD.</tspan>
+</text>
+<rect x="480" y="1330" width="300" height="100" rx="12" fill="#f7e0eb" stroke="#b9849e" stroke-width="2"/>
+<text x="630.0" y="1364" font-size="25" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="630.0" dy="0">IRQ mapper</tspan>
+</text>
+<text x="630.0" y="1396" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="630.0" dy="0">UART IRQ số 1</tspan>
+</text>
+<polyline points="2022,1210 2022,1380 780,1380" fill="none" stroke="#b74773" stroke-width="3" stroke-linejoin="round" marker-end="url(#irq)" stroke-dasharray="9 6"/>
+<text x="1420" y="1360" font-size="22" fill="#b74773" text-anchor="middle" font-weight="normal">
+<tspan x="1420" dy="0">irq: RX có dữ liệu / TX_DONE / RX overrun</tspan>
+</text>
+<polyline points="480,1380 247,1380 247,1170" fill="none" stroke="#b74773" stroke-width="3" stroke-linejoin="round" marker-end="url(#irq)" stroke-dasharray="9 6"/>
+<text x="260" y="1325" font-size="19" fill="#b74773" text-anchor="start" font-weight="normal">
+<tspan x="260" dy="0">platform_irq_rx → ISR</tspan>
+</text>
+<polyline points="1705,285 1705,265 2957,265 2957,690" fill="none" stroke="#b17420" stroke-width="3" stroke-linejoin="round" marker-end="url(#ctrl)"/>
+<text x="2650" y="293" font-size="19" fill="#b17420" text-anchor="middle" font-weight="normal">
+<tspan x="2650" dy="0">control[3:0] → logic top / LED</tspan>
+</text>
+<rect x="85" y="1490" width="480" height="95" rx="12" fill="#f0f2f5" stroke="#6f8ba1" stroke-width="2"/>
+<text x="325.0" y="1524" font-size="23" fill="#172b43" text-anchor="middle" font-weight="bold">
+<tspan x="325.0" dy="0">CLOCK_50 / KEY[0]</tspan>
+</text>
+<text x="325.0" y="1556" font-size="18" fill="#52687c" text-anchor="middle" font-weight="normal">
+<tspan x="325.0" dy="0">50 MHz • reset nhả sau 16 chu kỳ</tspan>
+</text>
+<text x="620" y="1525" font-size="22" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="620" dy="0">Clock / reset chung: CPU, interconnect, RAM, bridge và UART.</tspan>
+</text>
+<text x="620" y="1565" font-size="22" fill="#b17420" text-anchor="start" font-weight="normal">
+<tspan x="620" dy="0">PIO → logic top: [0] loopback; [1] bật CTS; [3:2] LEDG[1:0].</tspan>
+</text>
+<text x="3240" y="450" font-size="25" fill="#25805d" text-anchor="start" font-weight="normal">
+<tspan x="3240" dy="0">Chiều truyền qua UART</tspan>
+<tspan x="3240" dy="32.0">FPGA TX → USB-UART RXD → PC</tspan>
+<tspan x="3240" dy="32.0">PC → USB-UART TXD → FPGA RX</tspan>
+</text>
+<text x="40" y="1660" font-size="20" fill="#245d85" text-anchor="start" font-weight="normal">
+<tspan x="40" dy="0">AVALON-MM: address[11:0], read/write, writedata[31:0], byteenable[3:0] → bridge; readdata[31:0], waitrequest, valid, response[1:0] → interconnect.</tspan>
+</text>
+<text x="40" y="1703" font-size="20" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="40" dy="0">Sơ đồ chức năng: lược console JTAG / debug và dây CFG, trạng thái, clock/reset chi tiết; CTS/RTS có trong RTL, chế độ chat hiện tại không dùng bắt tay ngoài.</tspan>
+</text>
+<text x="40" y="1746" font-size="20" fill="#52687c" text-anchor="start" font-weight="normal">
+<tspan x="40" dy="0">Baud mặc định 115200, có thể đổi bằng firmware. Nhãn RXD/TXD ở đây thuộc CHIP USB-UART; nhãn TX/RX in trên board ESP32 có thể thuộc CPU ESP32.</tspan>
+</text>
+</g></svg>

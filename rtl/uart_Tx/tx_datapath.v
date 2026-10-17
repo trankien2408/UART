@@ -42,7 +42,6 @@ module tx_datapath (
     end
 
     
-    // Four bits hold eight DATA bits followed by a PARITY bit.
     reg  [3:0] bit_cnt;
     wire [3:0] max_bit_val;
 
@@ -69,7 +68,6 @@ module tx_datapath (
                          (data_bit_num_i == 2'b01) ? ^tx_data_i[5:0] :
                          (data_bit_num_i == 2'b10) ? ^tx_data_i[6:0] : ^tx_data_i[7:0];
 
-    // Spec: 1 = EVEN, 0 = ODD. Latch parity with the payload.
     always @(posedge clk or negedge reset_n) begin
         if (!reset_n) tx_parity_bit <= 1'b0;
         else if (load_tx) tx_parity_bit <= parity_type_i ? calc_parity : ~calc_parity;

@@ -112,7 +112,7 @@ Script nạp `.sof`, sau đó tải `.elf` vào RAM và chạy CPU.
 
 **Terminal 1 — nhập/nhận dòng qua JTAG và USB-Blaster:**
 
-```bash
+```
 bash UART/firmware/terminal_jtag.sh -c 1 -d 0
 ```
 
@@ -128,6 +128,11 @@ Thay `/dev/ttyUSB0` bằng cổng USB-UART thực tế. Script picocom đặt 11
 tắt flow control và local echo; Enter gửi CR+LF. Firmware tự echo ký tự về
 terminal đang gõ, chỉ chuyển sang terminal bên kia khi Enter. Không bật thêm
 local echo trong picocom vì sẽ bị lặp ký tự.
+
+Terminal 2 hiện bọc picocom bằng lớp hiển thị lỗi UART và byte không in được;
+đổi baud trực tiếp bằng Ctrl+A → Ctrl+B → nhập baud → Enter. Xem
+[hiển thị lỗi khi khác baud](docs/UART_ERROR_DISPLAY.md) để cập nhật SOF/ELF
+và hiểu ý nghĩa các marker lỗi.
 
 Mỗi dòng tối đa 120 byte; Backspace sửa dòng đang nhập. CR, LF và CR+LF được
 chuẩn hóa thành đúng một CR+LF để không thụt cột hoặc chèn dòng trống. Ví dụ

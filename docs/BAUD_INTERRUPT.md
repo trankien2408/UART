@@ -71,8 +71,13 @@ khi lệnh đang chờ; sau đó xử lý tiếp các phím đã được IP JTA
 | 0x18 | BAUD_DIV_SHADOW | RW / 27 | [15:0] divider dự kiến; byte lane 0/1 cập nhật riêng, bit cao bỏ qua |
 | 0x1C | BAUD_DIV_ACTIVE | RO / 27 | [15:0] divider thực sự đang chạy |
 | 0x20 | BAUD_CONTROL_STATUS | Mixed | Đọc bit 0 BUSY; bit 1 REJECTED; bit 3 DIRTY. Ghi bit 1 W1C xóa REJECTED, bit 2 APPLY là lệnh một lần |
-| 0x24 | INT_ENABLE | RW / 0 | [0] RX không rỗng; [1] TX_DONE; [2] RX overrun |
-| 0x28 | INT_STATUS | RO | Ba nguồn thô cùng vị trí bit; không bị INT_ENABLE che |
+| 0x24 | INT_ENABLE | RW / 0 | [0] RX không rỗng; [1] TX_DONE; [2] RX overrun; [3] RX framing/break |
+| 0x28 | INT_STATUS | RO | Bốn nguồn thô cùng vị trí bit; không bị INT_ENABLE che |
+
+Bổ sung 17/10: FIFO_STATUS (0x14) bit 5 lưu lỗi RX framing/break, ghi 1 để xóa.
+Ngắt bit 3 đưa lỗi lên JTAG ngay khi phát hiện, kể cả khi không có byte/Enter.
+Xem [UART_ERROR_DISPLAY.md](UART_ERROR_DISPLAY.md) về hiển thị lỗi hai chiều,
+giới hạn phát hiện sai baud và thao tác picocom.
 
 Đọc 0x20 bit 2 trả 0. DIRTY = SHADOW khác ACTIVE, không phải “đang có lệnh chờ”.
 BUSY = chưa đủ điều kiện idle TX/RX. Sau reset BUSY tạm bằng 1 cho đến khi RX

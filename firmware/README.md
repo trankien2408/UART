@@ -7,6 +7,10 @@ hiểu các thanh ghi 0x18–0x28 và cập nhật SOF/BSP/ELF tương ứng.
 Ứng dụng mặc định (`echo` trong lệnh build/nạp) là **chat hai chiều theo dòng**
 giữa JTAG UART và UART vật lý qua USB-UART trên ESP32.
 
+Bổ sung 17/10: lỗi RX framing/break được báo ngay trên JTAG; terminal UART vẫn
+dùng picocom, có lớp hiển thị lỗi driver và byte không in được. Xem
+[UART_ERROR_DISPLAY.md](../docs/UART_ERROR_DISPLAY.md). Cần SOF + ELF mới.
+
 ## 1. Hai terminal làm gì?
 
 - **Terminal 1 — juart-terminal:** gõ dòng, nhấn Enter để gửi qua UART ra terminal 2.
@@ -49,7 +53,7 @@ Baud mặc định sau reset là 115200; có thể đổi qua SHADOW/APPLY. CFG 
 | `0x14` | FIFO_STATUS | Full/empty TX/RX, overrun và số byte trong FIFO |
 | `0x18 / 0x1C` | BAUD_SHADOW / ACTIVE | Divider dự kiến / đang chạy |
 | `0x20` | BAUD_CONTROL_STATUS | APPLY, BUSY, REJECTED, DIRTY |
-| `0x24 / 0x28` | INT_ENABLE / STATUS | Enable và nguồn ngắt RX/TX/overrun |
+| `0x24 / 0x28` | INT_ENABLE / STATUS | Enable và nguồn ngắt RX/TX/overrun/framing |
 
 Driver luôn kiểm tra RX_DONE trước khi đọc RX, vì đọc RX rỗng sẽ giữ giao dịch
 APB chờ. `dti_try_queue()` kiểm tra TX_FULL rồi ghi TX/START để enqueue.

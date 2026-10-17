@@ -1,0 +1,11 @@
+Block,LE,LUT,FF,Memory bits,M9K
+Tổng bridge + UART,541,461,323,272,2
+Avalon–APB Bridge,117,92,57,0,0
+UART core (bao gồm các khối dưới),439,384,266,272,2
+APB Slave,43,22,34,0,0
+Register File (bao gồm 2 FIFO),232,201,150,272,2
+TX FIFO,47,30,39,128,1
+RX FIFO,61,52,41,144,1
+Baud generator,55,55,17,0,0
+TX core,52,51,27,0,0
+RX core,69,68,31,0,0

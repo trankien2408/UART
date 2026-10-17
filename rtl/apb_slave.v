@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-// APB4 completer. One mandatory wait cycle; optional register-side waits.
-// Capture in SETUP, commit once in ACCESS. Back-to-back transfers are supported.
 module apb_slave (
     input wire pclk, presetn,
     input wire psel, penable, pwrite,

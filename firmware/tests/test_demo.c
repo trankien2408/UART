@@ -22,7 +22,8 @@ int uart_irq_register(void (*fn)(void *),void *context) { irq_handler=fn;irq_con
 static uint32_t sources(void) {
     return ((status&DTI_RX_DONE) ? DTI_IRQ_RX : 0u) |
            ((status&DTI_TX_DONE) ? DTI_IRQ_TX_DONE : 0u) |
-           ((fifo_errors&DTI_RX_OVERRUN) ? DTI_IRQ_OVERRUN : 0u);
+           ((fifo_errors&DTI_RX_OVERRUN) ? DTI_IRQ_OVERRUN : 0u) |
+           ((fifo_errors&DTI_RX_FRAME_ERROR) ? DTI_IRQ_FRAME : 0u);
 }
 static unsigned starts, rx_reads, space, log_count;
 static uint8_t sent[4096];
@@ -67,7 +68,9 @@ void uart_mmio_write(uintptr_t address, uint32_t value)
         return;
     }
     if (address == UART_BASE+DTI_INT_ENABLE) { irq_mask=value;return; }
-    if (address == UART_BASE+DTI_FIFO_STATUS) { fifo_errors &= ~(value&DTI_RX_OVERRUN);return; }
+    if (address == UART_BASE+DTI_FIFO_STATUS) {
+        fifo_errors &= ~(value&(DTI_RX_OVERRUN|DTI_RX_FRAME_ERROR));return;
+    }
     if (address == UART_BASE+DTI_BAUD_SHADOW) { shadow_div=value;return; }
     if (address == UART_BASE+DTI_BAUD_CONTROL) {
         if (value&DTI_BAUD_REJECTED) baud_status &= ~DTI_BAUD_REJECTED;
@@ -245,6 +248,22 @@ int main(void)
 
     boot(); input(1,":baud 9600\r\n");
     assert(active_div==326 && strstr(log_data,"actual 9586")); expect_uart("");
+    // A framing error has no byte / Enter, but JTAG must show it immediately.
+    boot(); fifo_errors=DTI_RX_FRAME_ERROR;poll(64);flush_log();
+    assert(control==12u && strstr(log_data,"UART RX ERROR: FRAME/BREAK"));
+    assert(!fifo_errors && irq_mask==13u);
+    clear_output();fifo_errors=DTI_RX_FRAME_ERROR;poll(64);flush_log();
+    assert(log_count==0); // Coalesce errors until line or baud recovery.
+    input(1,":baud 9600\r\n");
+    assert(active_div==326 && strstr(log_data,"actual 9586"));
+    // Invisible decoded bytes are visible, but are not mislabeled as bit errors.
+    boot();receive(0,0);poll(64);flush_log();
+    assert(strstr(log_data,"NON-TEXT 0x00") && control==12u);
+    boot();receive(0x1b,0);poll(64);flush_log();
+    assert(strstr(log_data,"NON-TEXT 0x1B") && !memchr(log_data,0x1b,log_count));
+    clear_output();input(0,"discarded\n");
+    clear_output();input(0,"ok\n");
+    assert(strcmp(log_data,"ok\r\n")==0);
     boot(); input(1,":baud 230400\n");
     assert(active_div==27 && strstr(log_data,"invalid rate")); expect_uart("");
     boot(); baud_status=DTI_BAUD_BUSY;input(1,":baud 9600\r");
@@ -256,6 +275,6 @@ int main(void)
     reset_model();sysid=0;assert(uart_demo_init()==-1);flush_log();
     assert(control==8u && starts==0 && strstr(log_data,"init/system ID"));
     boot();
-    puts("PASS test_demo: bidirectional Enter buffering, CR/LF/CRLF, no blank/staircase lines, backspace, independent inputs, line limit/recovery, parity, TX queue overflow, blocked JTAG, timeout/wrap, bad SYSID/reset");
+    puts("PASS test_demo: Enter/CRLF/backspace, framing diagnostic without Enter, baud recovery, visible NUL/ESC, parity, queue overflow, timeout/wrap, SYSID/reset");
     return 0;
 }

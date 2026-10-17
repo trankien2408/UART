@@ -10,7 +10,7 @@ module tb_baud_irq;
     wire [31:0] prdata;
     reg rx=1,cts_n=0;
     wire tx,rts_n,irq;
-    dti_uart dut(.clk(clk),.pclk(clk),.reset_n(reset_n),.presetn(reset_n),
+    apb_uart dut(.clk(clk),.pclk(clk),.reset_n(reset_n),.presetn(reset_n),
         .psel(psel),.penable(penable),.pwrite(pwrite),.pstrb(pstrb),.paddr(paddr),.pwdata(pwdata),
         .pready(pready),.pslverr(pslverr),.prdata(prdata),.rx(rx),.cts_n(cts_n),.tx(tx),.rts_n(rts_n),.irq(irq));
     integer checks=0;

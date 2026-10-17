@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-// Single-clock FIFO, asynchronous head read. A full FIFO accepts replacement
-// on a simultaneous pop/push; an empty FIFO never pops an arriving word.
 module uart_fifo #(parameter WIDTH=8, parameter DEPTH=16) (
     input wire clk, reset_n, push, pop,
     input wire [WIDTH-1:0] data_i,

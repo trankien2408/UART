@@ -64,11 +64,11 @@ row('firmware/serial_echo_test.py',"parser.add_argument('--baud'",'Thêm --baud 
 ['File sinh tự động: uart_soc.qsys, uart_soc.sopcinfo, firmware/build/bsp/system.h','Sinh từ create_system.tcl và firmware/build.sh','Generate lại Platform Designer và BSP; system.h có UART_IRQ=1, controller ID=0. Các file này không sửa tay. bsp_settings.tcl chỉ cập nhật chú thích về IRQ/mtime.']
 ], 'Thao tác: dừng gửi picocom → gõ :baud 9600 tại JTAG → chờ báo thành công → mở lại picocom ở 9600.\nMặc định/reset: 115200. Driver từ chối 230400 vì sai số khoảng −3,12%; không có auto-baud.'),
 ('4. File kiểm thử và phạm vi xác nhận', 'Bảng này tóm tắt các nhóm kiểm thử đã bổ sung hoặc điều chỉnh.',[
-row('tb/tb_baud_dynamic.sv','module tb_baud_dynamic','File mới: divider 1/2/65535, reload, divider 0 và đổi divider; 263.816 checks.',True),
-row('tb/tb_baud_irq.sv','module tb_baud_irq','File mới: serial nhiều baud, APPLY khi CTS/RX bận hoặc có start edge, byte strobe, IRQ mask/level, parity/overrun và reset; 269 checks.',True),
+row('tb/tb_baud_dynamic.v','module tb_baud_dynamic','File mới: divider 1/2/65535, reload, divider 0 và đổi divider; 263.816 checks.',True),
+row('tb/tb_baud_irq.v','module tb_baud_irq','File mới: serial nhiều baud, APPLY khi CTS/RX bận hoặc có start edge, byte strobe, IRQ mask/level, parity/overrun và reset; 269 checks.',True),
 ['firmware/tests/test_driver.c; test_demo.c; test_irq.c [test_irq.c MỚI]','Các bài test C native; chạy bởi firmware/test_driver.sh','Kiểm tra tính baud, timeout, lệnh JTAG; ISR thật trong model host, ring wrap/overflow, parity, mask TX_DONE và lỗi đăng ký ISR.'],
-['tb/firmware_cosim.c; tb_firmware_cosim.sv; tb_firmware_echo_cosim.sv','Co-simulation C + RTL; các script run_firmware_*cosim.sh','Driver + RTL: 768 frame, đổi baud bằng API. Chat + RTL: 538 byte, IRQ RTL được model host gọi ISR C; đổi 9600 → 115200, từ chối 230400.'],
-['tb/tb_niosv_firmware.sv; sim/run_tests.sh','Giám sát CPU thật; danh sách regression','Cho phép trap ngắt hợp lệ, kiểm tra có IRQ entry; payload chat dùng ASCII. Thêm hai test RTL mới; cập nhật các TB cũ cho cổng mới và địa chỉ không hợp lệ.'],
+['tb/firmware_cosim.c; tb_firmware_cosim.v; tb_firmware_echo_cosim.v','Co-simulation C + RTL; các script run_firmware_*cosim.sh','Driver + RTL: 768 frame, đổi baud bằng API. Chat + RTL: 538 byte, IRQ RTL được model host gọi ISR C; đổi 9600 → 115200, từ chối 230400.'],
+['tb/tb_niosv_firmware.v; sim/run_tests.sh','Giám sát CPU thật; danh sách regression','Cho phép trap ngắt hợp lệ, kiểm tra có IRQ entry; payload chat dùng ASCII. Thêm hai test RTL mới; cập nhật các TB cũ cho cổng mới và địa chỉ không hợp lệ.'],
 ['docs/BAUD_INTERRUPT.md; firmware/VALIDATION.md; README và tài liệu tích hợp','Hướng dẫn sử dụng / kết quả đã ghi nhận','Ghi register map, quy trình đổi baud, chính sách ISR và kết quả. Tài liệu tóm tắt này không chạy lại các kiểm thử.']
 ], 'Đã ghi nhận: RTL 15/15 PASS; C/ISR và C+RTL PASS; ELF build PASS; Quartus timing +0,148 ns.\nQuesta compile-only PASS; chạy CPU bị chặn socket. SOF còn Simulation-Only trong môi trường công cụ; chưa xác nhận bản mới trên kit.')
 ]

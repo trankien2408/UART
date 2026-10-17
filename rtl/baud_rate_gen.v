@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-// divider_i is the number of system clocks per x16 tick (1..65535).
-// Change divider only together with reload_i while both serial engines are idle.
 module baud_rate_gen (
     input wire clk, rst_n,
     input wire [15:0] divider_i,
@@ -8,7 +6,6 @@ module baud_rate_gen (
     output reg tick_tx,
     output wire tick_rx
 );
-    // Separate output ports; both directions use the same active divider/phase.
     assign tick_rx = tick_tx;
     reg [15:0] counter;
     always @(posedge clk or negedge rst_n) begin

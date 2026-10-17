@@ -13,6 +13,12 @@ if ! command -v picocom >/dev/null 2>&1; then
     echo 'Missing picocom. Install on Ubuntu: sudo apt install picocom' >&2
     exit 127
 fi
+firmware_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Retain picocom's UI; expose real driver error flags / invisible received bytes.
+# Set UART_TERMINAL_PLAIN=1 for the original unfiltered binary view.
+if [[ "${UART_TERMINAL_PLAIN:-0}" != 1 ]]; then
+    exec python3 "$firmware_dir/serial_diagnostics.py" "$1" "$baud"
+fi
 # Local echo OFF: ky tu hien ve phai do FPGA tra lai, khong phai PC tu in.
 # Enter gui CR+LF; firmware echo nguyen hai byte de xuong dong tren terminal.
 # Picocom mac dinh tat local echo; khong them --echo.

@@ -9,7 +9,6 @@ module tx_topmodule (
     input  wire       parity_en_i,
     input  wire       parity_type_i,
     
-    // Tín hiệu điều khiển & Báo trạng thái
     input  wire       start_tx_i,
     input  wire       cts_n,
     output wire       tx,
@@ -23,7 +22,6 @@ module tx_topmodule (
     wire       tick_max;
     wire       bit_cnt_max;
     wire       bit_is_parity;
-    // Freeze the frame format at the actual start (after CTS permits it).
     reg [5:0] frame_cfg;
     wire [5:0] cfg = tx_busy_o ? frame_cfg :
         {stop_bit_num_i, parity_type_i, parity_en_i, data_bit_num_i};
@@ -32,7 +30,6 @@ module tx_topmodule (
         else if (load_tx)
             frame_cfg <= {stop_bit_num_i, parity_type_i, parity_en_i, data_bit_num_i};
     end
-    // 1. Khối Datapath (tx_datapath)
    tx_datapath u_tx_datapath (
         .clk            (clk),
         .reset_n        (reset_n),
@@ -50,7 +47,6 @@ module tx_topmodule (
         .bit_is_parity  (bit_is_parity),
         .tx             (tx)
     );
-    // 2. Khối Controller (tx_controller)
     tx_controller u_tx_controller (
         .clk            (clk),
         .reset_n        (reset_n),

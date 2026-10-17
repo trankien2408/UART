@@ -1,0 +1,139 @@
+{
+  "device": "EP4CE115F29C7",
+  "tool": "Quartus Prime Lite 25.1std.0",
+  "top": "uart_avalon",
+  "scope": "Standalone Avalon–APB bridge + full UART; no CPU/interconnect/system RAM",
+  "clock_MHz": 50,
+  "seed": 1,
+  "virtual_pins": 93,
+  "LE": 541,
+  "LUT": 461,
+  "FF": 323,
+  "Fmax_MHz": 101.53,
+  "setup_slack_ns": 10.151,
+  "worst_hold_slack_ns": 0.137,
+  "power": {
+    "core_dynamic_mW": 4.34,
+    "device_core_static_mW": 98.12,
+    "io_mW": 40.73,
+    "device_total_mW": 143.18
+  },
+  "power_confidence": "Low: user provided insufficient toggle rate data",
+  "resources": [
+    {
+      "name": "|uart_avalon",
+      "entity": "uart_avalon",
+      "LE": 541,
+      "LUT": 461,
+      "FF": 323,
+      "memory_bits": 272,
+      "M9K": 2,
+      "label": "Tổng bridge + UART"
+    },
+    {
+      "name": "|uart_avalon|avalon_apb_bridge:bridge",
+      "entity": "avalon_apb_bridge",
+      "LE": 117,
+      "LUT": 92,
+      "FF": 57,
+      "memory_bits": 0,
+      "M9K": 0,
+      "label": "Avalon–APB Bridge"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart",
+      "entity": "apb_uart",
+      "LE": 439,
+      "LUT": 384,
+      "FF": 266,
+      "memory_bits": 272,
+      "M9K": 2,
+      "label": "UART core (bao gồm các khối dưới)"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|apb_slave:u_apb",
+      "entity": "apb_slave",
+      "LE": 43,
+      "LUT": 22,
+      "FF": 34,
+      "memory_bits": 0,
+      "M9K": 0,
+      "label": "APB Slave"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|register_file:u_registers",
+      "entity": "register_file",
+      "LE": 232,
+      "LUT": 201,
+      "FF": 150,
+      "memory_bits": 272,
+      "M9K": 2,
+      "label": "Register File (bao gồm 2 FIFO)"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|register_file:u_registers|uart_fifo:tx_fifo",
+      "entity": "uart_fifo",
+      "LE": 47,
+      "LUT": 30,
+      "FF": 39,
+      "memory_bits": 128,
+      "M9K": 1,
+      "label": "TX FIFO"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|register_file:u_registers|uart_fifo:rx_fifo",
+      "entity": "uart_fifo",
+      "LE": 61,
+      "LUT": 52,
+      "FF": 41,
+      "memory_bits": 144,
+      "M9K": 1,
+      "label": "RX FIFO"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|baud_rate_gen:u_baud",
+      "entity": "baud_rate_gen",
+      "LE": 55,
+      "LUT": 55,
+      "FF": 17,
+      "memory_bits": 0,
+      "M9K": 0,
+      "label": "Baud generator"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|tx_topmodule:u_tx",
+      "entity": "tx_topmodule",
+      "LE": 52,
+      "LUT": 51,
+      "FF": 27,
+      "memory_bits": 0,
+      "M9K": 0,
+      "label": "TX core"
+    },
+    {
+      "name": "|uart_avalon|apb_uart:uart|rx_topmodule:u_rx",
+      "entity": "rx_topmodule",
+      "LE": 69,
+      "LUT": 68,
+      "FF": 31,
+      "memory_bits": 0,
+      "M9K": 0,
+      "label": "RX core"
+    }
+  ],
+  "rtl_sha256": {
+    "rtl/apb_slave.v": "7215c04e762d69d2999bab441127a25f6b24779c46529639ef95aef53a1cbef1",
+    "rtl/apb_uart.v": "800b0ad4fd07520cad057fa2b277676553b827c2f0e578f686a4acd15d4e59b6",
+    "rtl/avalon_apb_bridge.v": "833d9adb92eae744db09425dfb1ecff48b4634aa5551491f4d0894242c6bd882",
+    "rtl/baud_rate_gen.v": "8dcdfbac633de06d23dfed5e03667c66b6a036e5d56dc2c098b50439ec6eb7fc",
+    "rtl/register_file.v": "2364a1cfff9c78ebb08983e4d1ddbbea3332e002e60aea02bb9349d19368b89e",
+    "rtl/uart_Tx/tx_controller.v": "5cd304776b243b91277bb06cc21297a01da04bf04d7d104bc91286c30f13fa87",
+    "rtl/uart_Tx/tx_datapath.v": "229e09402c600245f0b94b4b9ecc77db522890a2562f0c5788294edd81848f35",
+    "rtl/uart_Tx/tx_topmodule.v": "05be5445aafa6fb6155b124d8bae2f1f87404498726c9a917d77a31d30367eee",
+    "rtl/uart_avalon.v": "55417f5a43961b81f793df1c3b3323f9701027a6791e262a1b4a042a29dddd81",
+    "rtl/uart_fifo.v": "cb1c64aef691500779a23788ced65492b3f9233887629b163a0147e9ffbf97c0",
+    "rtl/uart_rx/rx_controller.v": "213563f9e4b2a1911ace9cbdfef638ec275089fa4da471804204c5af9f442405",
+    "rtl/uart_rx/rx_datapath.v": "e2677be9f1dfbcb4dd3f16581b18a8013090766f030b3578a1a36773465d8d05",
+    "rtl/uart_rx/rx_topmodule.v": "6aadb887e37b0097cb0aadc3ba55432c1843b9286ddb7bbba49504bff9c1d74c"
+  }
+}

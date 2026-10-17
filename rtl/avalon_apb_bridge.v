@@ -1,7 +1,4 @@
 `timescale 1ns/1ps
-// One outstanding, non-burst Avalon-MM command. Byte-addressed APB4.
-// Commands are accepted in IDLE; responses are returned after APB completion.
-// Blocking APB accesses remain blocking. Reset must also reset the APB slave.
 module avalon_apb_bridge (
     input wire clk, reset_n,
     input wire [11:0] av_address,
@@ -40,7 +37,6 @@ module avalon_apb_bridge (
                     pwdata <= av_writedata;
                     pstrb <= av_write ? av_byteenable : 4'd0;
                     if (av_read && av_write) begin
-                        // Illegal command: return SLAVEERROR without APB effects.
                         av_response <= 2'b10;
                         av_readdata <= 0;
                         state <= RESPONSE;

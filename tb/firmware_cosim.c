@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdint.h>
+#include <string.h>
 #include "dti_uart.h"
 #include "uart_selftest.h"
 #include "uart_platform.h"
@@ -110,7 +111,7 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
     (void)unused;
     // args: address, read, write, writedata, byteenable,
     // accepted, readvalid, writevalid, readdata, response, cycles.
-    static vpiHandle args[14];
+    static vpiHandle args[15];
     static int initialized, state;
     if(!initialized) {
         vpiHandle iter=vpi_iterate(vpiArgument,vpi_handle(vpiSysTfCall,NULL));
@@ -119,6 +120,7 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
         args[11]=vpi_scan(iter); // PIO control: demo ready/error LEDs.
         args[12]=vpi_scan(iter); // Real RTL UART IRQ level.
         args[13]=vpi_scan(iter); // Optional JTAG baud command phase.
+        args[14]=vpi_scan(iter); // Count actual JTAG framing diagnostic lines.
 #endif
         vpi_free_object(iter);
         initialized=1;
@@ -162,11 +164,23 @@ static PLI_INT32 tick_cb(PLI_BYTE8 *unused)
                 static unsigned phase, index;
                 unsigned request=get(args[13]);
                 if (request!=phase) { phase=request;index=0; }
-                const char *cmd=phase==1 ? ":baud 9600\n" : phase==2 ? ":baud 115200\n" : phase==3 ? ":baud 230400\n" : "";
+                const char *cmd=phase==1 ? ":baud 9600\n" : (phase==2 || phase==4) ? ":baud 115200\n" : phase==3 ? ":baud 230400\n" : "";
                 if(cmd[index]) result=(1u<<15)|(uint8_t)cmd[index++];
             }
             else if(!direction && address==JTAG_UART_BASE+4u) result=16u<<16; // JTAG output drained
-            else if(direction && address==JTAG_UART_BASE) {} // drop JTAG TX
+            else if(direction && address==JTAG_UART_BASE) {
+                static char line[256];
+                static unsigned length;
+                if (length+1u<sizeof(line)) line[length++]=(char)data;
+                if ((uint8_t)data=='\n') {
+                    line[length]=0;
+                    if (strstr(line,"[UART RX ERROR: FRAME/BREAK")) {
+                        put(args[14],get(args[14])+1u);
+                        vpi_printf("UART_DIAGNOSTIC: %s",line);
+                    }
+                    length=0;
+                }
+            }
             else if(direction && address==JTAG_UART_BASE+4u && data==0) {}
             else if(direction && address==CONTROL_BASE) put(args[11],data);
             else valid=0;

@@ -8,7 +8,7 @@ puts "UART_SIM: compiling device libraries and generated SoC"
 dev_com
 com
 puts "UART_SIM: compiling board top and firmware testbench"
-vlog -sv -work work "$root/fpga/de2_115_uart_top.v" "$root/tb/tb_niosv_firmware.sv"
+vlog -sv -work work "$root/fpga/de2_115_uart_top.v" "$root/tb/tb_niosv_firmware.v"
 if {[info exists env(UART_SOC_COMPILE_ONLY)] && $env(UART_SOC_COMPILE_ONLY) eq "1"} {
     puts "PASS Nios V simulation compile only (no CPU execution)"
     quit -code 0 -force

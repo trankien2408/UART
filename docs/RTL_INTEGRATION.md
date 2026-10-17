@@ -152,6 +152,10 @@ file sinh tự động từ các lượt trước đã được dọn khỏi pro
 Compile-only không phải simulation PASS. Mỗi test bắt buộc có PASS marker và
 không có assertion failure; watchdog và timeout ngăn test treo vô hạn.
 
+Các testbench dùng đuôi `.v`; các testbench có cú pháp SystemVerilog vẫn được
+biên dịch với `iverilog -g2012` hoặc `vlog -sv` trong script. Riêng
+`tb_apb_slave.v` dùng Verilog-2005 và có thể biên dịch với `iverilog -g2005`.
+
 Kiểm tra khả năng tổng hợp bằng Quartus (chỉ Analysis & Synthesis, không fitter):
 
 ```bash
@@ -161,11 +165,11 @@ bash UART/sim/check_synthesis.sh
 Log/report nằm trong `UART/sim/results/quartus/`. `QUARTUS_BIN` cho phép thay
 đường dẫn cài đặt. Compile và synthesis thành công không thay thế simulation.
 
-- `tb_uart_fifo.sv`: 30.000 chu kỳ ngẫu nhiên, depth 1/3/16, wrap, reset, push/pop đồng thời.
-- `tb_register_file.sv`: TX snapshot, full/backpressure, RX ordering/parity, overrun/W1C, simultaneous replacement và reset.
-- `tb_baud_rate_check.sv`: 9 baud yêu cầu + biên divider 1/2, khoảng tick,
+- `tb_uart_fifo.v`: 30.000 chu kỳ ngẫu nhiên, depth 1/3/16, wrap, reset, push/pop đồng thời.
+- `tb_register_file.v`: TX snapshot, full/backpressure, RX ordering/parity, overrun/W1C, simultaneous replacement và reset.
+- `tb_baud_rate_check.v`: 9 baud yêu cầu + biên divider 1/2, khoảng tick,
   số tick, độ rộng và reset.
-- `tb_dti_uart.sv`: APB BFM và serial TX/RX model độc lập với counters của DUT;
+- `tb_dti_uart.v`: APB BFM và serial TX/RX model độc lập với counters của DUT;
   kiểm tra 24 frame format × 8 payload pattern, full-duplex, hai seed mỗi seed
   64 frame ngẫu nhiên có baud skew ±2%, CTS/RTS, blocking access, back-to-back,
   byte strobe, reserved bits, lỗi địa chỉ/RO, parity/frame error, break,

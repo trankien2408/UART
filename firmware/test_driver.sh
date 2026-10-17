@@ -16,3 +16,7 @@ echo 'PASS firmware host syntax check (not a RISC-V executable)' | tee build/tes
 gcc -std=c11 -Wall -Wextra -Werror -Wpedantic -DUART_HOST_TEST \
     -fsanitize=undefined -g -I. dti_uart.c uart_irq.c tests/test_irq.c -o build/tests/test_irq
 build/tests/test_irq | tee build/tests/irq.log
+python3 tests/test_serial_diagnostics.py > build/tests/serial_diagnostics.log 2>&1 || {
+    cat build/tests/serial_diagnostics.log; exit 1;
+}
+cat build/tests/serial_diagnostics.log
